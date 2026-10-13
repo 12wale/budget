@@ -150,3 +150,30 @@ export function downloadCSV(csvContent: string, filename: string): void {
   link.click();
   URL.revokeObjectURL(url);
 }
+
+export function exportBackupJSON(data: LocalAppDataV1): string {
+  return JSON.stringify(data, null, 2);
+}
+
+export function downloadJSON(jsonContent: string, filename: string): void {
+  const blob = new Blob([jsonContent], { type: "application/json;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+export function validateBackupJSON(jsonStr: string): { ok: true; data: LocalAppDataV1 } | { ok: false; error: string } {
+  try {
+    const parsed = JSON.parse(jsonStr);
+    const result = LocalAppDataV1Schema.safeParse(parsed);
+    if (!result.success) {
+      return { ok: false, error: result.error.issues.map((i) => i.message).join(", ") };
+    }
+    return { ok: true, data: result.data };
+  } catch {
+    return { ok: false, error: "Invalid JSON format" };
+  }
+}

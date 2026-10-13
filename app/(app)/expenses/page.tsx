@@ -6,14 +6,14 @@ import { usePreferences } from "@/context/PreferencesContext";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Card } from "@/components/ui/Card";
+import { Card, CardBody } from "@/components/ui/Card";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { getCategoryById } from "@/lib/categories";
 import { formatDate } from "@/lib/date";
 import type { Expense } from "@/types/budget.types";
 
 export default function ExpensesPage() {
-  const { expenses, deleteExpense, summary } = useBudget();
+  const { expenses, deleteExpense, plan } = useBudget();
   const { t, formatAmount, locale } = usePreferences();
 
   const [addOpen, setAddOpen] = useState(false);
@@ -24,71 +24,123 @@ export default function ExpensesPage() {
   const totalMinor = expenses.reduce((s, e) => s + e.amountMinor, 0);
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4">
+    <div className="space-y-6 animate-fade-in max-w-4xl mx-auto">
+      {/* Header & Total Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold">{t("expenses.title")}</h1>
-          {expenses.length > 0 && (
-            <p className="text-sm mt-1" style={{ color: "var(--color-muted)" }}>
-              {t("expenses.totalSpent")}: <strong className="tabular-nums">{formatAmount(totalMinor)}</strong>
-            </p>
-          )}
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+            {t("expenses.title")}
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            سجل وتتبع جميع مصاريفك اليومية بدقة وسهولة.
+          </p>
         </div>
-        <Button size="sm" icon="➕" onClick={() => setAddOpen(true)}>
+        <Button size="md" icon="➕" onClick={() => setAddOpen(true)}>
           {t("expenses.addExpense")}
         </Button>
       </div>
 
-      {/* List */}
+      {/* Summary KPI Bar */}
+      {expenses.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Card className="bg-gradient-to-br from-indigo-50/50 to-white border-indigo-100">
+            <CardBody className="p-4 sm:p-5 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-slate-500 mb-1">{t("expenses.totalSpent")}</p>
+                <p className="text-2xl font-extrabold text-indigo-700 tabular-nums">
+                  {formatAmount(totalMinor)}
+                </p>
+              </div>
+              <div className="w-11 h-11 rounded-2xl bg-indigo-100/80 text-indigo-600 flex items-center justify-center text-xl shadow-xs">
+                💸
+              </div>
+            </CardBody>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-slate-50 to-white border-slate-200">
+            <CardBody className="p-4 sm:p-5 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-slate-500 mb-1">عدد المصروفات المسجلة</p>
+                <p className="text-2xl font-extrabold text-slate-900 tabular-nums">
+                  {expenses.length}
+                </p>
+              </div>
+              <div className="w-11 h-11 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center text-xl shadow-xs">
+                📝
+              </div>
+            </CardBody>
+          </Card>
+        </div>
+      )}
+
+      {/* Expense List */}
       {sorted.length === 0 ? (
-        <EmptyState
-          icon="🧾"
-          title={t("expenses.empty")}
-          description={t("expenses.emptySubtext")}
-          action={
-            <Button onClick={() => setAddOpen(true)} icon="➕">
-              {t("expenses.addExpense")}
-            </Button>
-          }
-        />
+        <Card className="shadow-xs">
+          <EmptyState
+            icon="🧾"
+            title={t("expenses.empty")}
+            description={t("expenses.emptySubtext")}
+            action={
+              <Button onClick={() => setAddOpen(true)} icon="➕">
+                {t("expenses.addExpense")}
+              </Button>
+            }
+          />
+        </Card>
       ) : (
-        <Card>
-          <ul className="divide-y divide-[var(--color-border)]" role="list">
+        <Card className="overflow-hidden shadow-xs">
+          <div className="px-5 py-3.5 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between text-xs font-bold text-slate-500">
+            <span>تفاصيل المصروف</span>
+            <span>المبلغ والإجراء</span>
+          </div>
+
+          <ul className="divide-y divide-slate-100" role="list">
             {sorted.map((expense) => {
               const category = getCategoryById(expense.categoryId);
               return (
                 <li
                   key={expense.id}
-                  className="flex items-center gap-3 px-5 py-4 md:px-6 hover:bg-[var(--color-surface-2)] transition-colors"
+                  className="flex items-center gap-3.5 px-5 py-4 sm:px-6 hover:bg-slate-50/70 transition-colors group"
                 >
-                  <span className="text-2xl w-9 text-center flex-shrink-0" aria-hidden="true">
+                  <div className="w-11 h-11 rounded-2xl bg-slate-100 border border-slate-200/60 flex items-center justify-center text-2xl shrink-0 shadow-xs group-hover:scale-105 transition-transform">
                     {category?.icon ?? "📦"}
-                  </span>
+                  </div>
+
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium" style={{ color: "var(--color-text)" }}>
-                      {t(category?.labelKey ?? "categories.other")}
-                    </p>
-                    <p className="text-xs mt-0.5" style={{ color: "var(--color-muted)" }}>
-                      {formatDate(expense.date, locale)}
-                      {expense.note && ` · ${expense.note}`}
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-bold text-slate-900 truncate">
+                        {t(category?.labelKey ?? "categories.other")}
+                      </p>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                      <span>{formatDate(expense.date, locale)}</span>
+                      {expense.note && (
+                        <>
+                          <span>•</span>
+                          <span className="text-slate-600 bg-slate-100/80 px-2 py-0.5 rounded-md">
+                            {expense.note}
+                          </span>
+                        </>
+                      )}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <p className="text-sm font-bold tabular-nums">{formatAmount(expense.amountMinor)}</p>
-                    <div className="flex items-center gap-1">
+
+                  <div className="flex items-center gap-3.5 shrink-0">
+                    <p className="text-base sm:text-lg font-extrabold text-slate-900 tabular-nums">
+                      {formatAmount(expense.amountMinor)}
+                    </p>
+
+                    <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => setEditTarget(expense)}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[var(--color-surface-2)] transition-colors text-base"
-                        style={{ color: "var(--color-muted)" }}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-indigo-50 hover:text-indigo-600 transition-colors text-sm text-slate-400"
                         aria-label={`${t("expenses.editExpense")}: ${formatAmount(expense.amountMinor)}`}
                       >
                         ✏️
                       </button>
                       <button
                         onClick={() => setDeleteTarget(expense)}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[var(--color-danger-subtle)] transition-colors text-base"
-                        style={{ color: "var(--color-muted)" }}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-rose-50 hover:text-rose-600 transition-colors text-sm text-slate-400"
                         aria-label={`${t("expenses.deleteExpense")}: ${formatAmount(expense.amountMinor)}`}
                       >
                         🗑️
@@ -126,7 +178,7 @@ export default function ExpensesPage() {
         )}
       </Modal>
 
-      {/* Delete Confirm Modal */}
+      {/* Delete Confirmation Modal */}
       <Modal
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
@@ -148,17 +200,21 @@ export default function ExpensesPage() {
           </>
         }
       >
-        <p className="text-sm" style={{ color: "var(--color-text)" }}>
-          {t("expenses.deleteConfirm")}
-        </p>
-        {deleteTarget && (
-          <div className="mt-4 p-4 rounded-xl" style={{ background: "var(--color-surface-2)" }}>
-            <p className="text-sm font-medium">{formatAmount(deleteTarget.amountMinor)}</p>
-            <p className="text-xs mt-1" style={{ color: "var(--color-muted)" }}>
-              {formatDate(deleteTarget.date, locale)}
-            </p>
-          </div>
-        )}
+        <div className="space-y-3">
+          <p className="text-sm font-medium text-slate-700">
+            {t("expenses.deleteConfirm")}
+          </p>
+          {deleteTarget && (
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-600">
+                {formatDate(deleteTarget.date, locale)}
+              </span>
+              <span className="text-base font-extrabold text-slate-900 tabular-nums">
+                {formatAmount(deleteTarget.amountMinor)}
+              </span>
+            </div>
+          )}
+        </div>
       </Modal>
     </div>
   );

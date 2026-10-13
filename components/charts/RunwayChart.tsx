@@ -1,8 +1,8 @@
 "use client";
 
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -50,32 +50,43 @@ export function RunwayChart({ plan, summary }: Props) {
   }
 
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardHeader>
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
           <div>
-            <h2 className="text-base font-semibold">{t("overview.estimatedRunway")}</h2>
-            <p className="text-xs mt-0.5" style={{ color: "var(--color-muted)" }}>
-              {t("overview.forecastBased")}{forecastLabel}
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-pulse"></span>
+              <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                {t("overview.estimatedRunway")}
+              </h2>
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              {t("overview.forecastBased")} <span className="font-semibold text-indigo-600">{forecastLabel}</span>
             </p>
           </div>
-          <p className="text-xs px-2 py-1 rounded-md" style={{ background: "var(--color-surface-2)", color: "var(--color-muted)" }}>
-            {t("forecast.estimateNote").slice(0, 60)}…
-          </p>
+          <span className="text-xs px-3 py-1 rounded-full bg-slate-100 text-slate-600 font-medium self-start sm:self-auto">
+            توقع تنازلي للميزانية
+          </span>
         </div>
       </CardHeader>
 
-      <CardBody>
+      <CardBody className="p-4 sm:p-6">
         {/* Chart */}
-        <div className="h-52 md:h-64" aria-hidden="true">
+        <div className="h-60 sm:h-72 w-full" aria-hidden="true">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+            <AreaChart data={chartData} margin={{ top: 12, right: 12, bottom: 0, left: 12 }}>
+              <defs>
+                <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.22} />
+                  <stop offset="95%" stopColor="#4F46E5" stopOpacity={0.0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
               <XAxis
                 dataKey="date"
-                tick={{ fontSize: 11, fill: "var(--color-muted)" }}
+                tick={{ fontSize: 11, fill: "#64748B", fontWeight: 500 }}
                 tickLine={false}
-                axisLine={false}
+                axisLine={{ stroke: "#E2E8F0" }}
                 interval="preserveStartEnd"
               />
               <YAxis
@@ -86,66 +97,71 @@ export function RunwayChart({ plan, summary }: Props) {
                     maximumFractionDigits: 1,
                   })
                 }
-                tick={{ fontSize: 11, fill: "var(--color-muted)" }}
+                tick={{ fontSize: 11, fill: "#64748B", fontWeight: 500 }}
                 tickLine={false}
                 axisLine={false}
-                width={70}
+                width={72}
                 orientation={preferences.language === "ar" ? "right" : "left"}
               />
               <Tooltip
-                formatter={(value: number) =>
-                  [formatMinor(value * 100, preferences.currency, locale), ""]
-                }
-                labelStyle={{ fontFamily: "inherit", fontSize: 12 }}
+                formatter={(value: any) => [
+                  formatMinor(Number(value ?? 0) * 100, preferences.currency, locale),
+                  "الرصيد المتبقي",
+                ]}
+                labelStyle={{ fontFamily: "inherit", fontSize: 12, fontWeight: 600, color: "#1E293B" }}
                 contentStyle={{
-                  background: "var(--color-surface)",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: "var(--radius-control)",
+                  background: "rgba(255, 255, 255, 0.95)",
+                  backdropFilter: "blur(8px)",
+                  border: "1px solid #E2E8F0",
+                  borderRadius: "14px",
+                  boxShadow: "0 10px 25px -4px rgba(15, 23, 42, 0.1)",
                   fontSize: 12,
+                  padding: "8px 12px",
                 }}
               />
               <ReferenceLine
                 x={formatDate(today, locale, { month: "short", day: "numeric" })}
-                stroke="var(--color-primary)"
+                stroke="#6366F1"
                 strokeDasharray="4 4"
-                label={{ value: "اليوم", position: "top", fontSize: 10, fill: "var(--color-primary)" }}
+                label={{ value: "اليوم", position: "top", fontSize: 11, fill: "#6366F1", fontWeight: 600 }}
               />
-              {/* Actual balance line */}
-              <Line
+              <Area
                 dataKey="balance"
                 type="monotone"
-                stroke="var(--color-primary)"
-                strokeWidth={2.5}
-                dot={false}
-                activeDot={{ r: 4, fill: "var(--color-primary)" }}
-                strokeDasharray={(d: { isProjected?: boolean }) => (d?.isProjected ? "6 3" : undefined)}
+                stroke="#4F46E5"
+                strokeWidth={3}
+                fill="url(#balanceGradient)"
+                activeDot={{ r: 6, fill: "#4F46E5", stroke: "#FFFFFF", strokeWidth: 2 }}
               />
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Text summary table (accessibility) */}
-        <details className="mt-4">
-          <summary className="text-xs cursor-pointer" style={{ color: "var(--color-muted)" }}>
-            {t("common.noData") === "لا توجد بيانات" ? "عرض البيانات كجدول" : "View data as table"}
+        {/* Accessible Data Table Toggle */}
+        <details className="mt-4 pt-3 border-t border-slate-100 group">
+          <summary className="text-xs font-semibold cursor-pointer text-slate-500 hover:text-indigo-600 transition-colors list-none flex items-center justify-between">
+            <span>{preferences.language === "ar" ? "📊 عرض البيانات كجدول مفصل" : "📊 View data as detailed table"}</span>
+            <span className="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
           </summary>
           <div className="overflow-x-auto mt-3">
             <table className="w-full text-xs" aria-label={t("overview.estimatedRunway")}>
               <thead>
-                <tr>
-                  <th className="text-start py-1 px-2 font-medium" style={{ color: "var(--color-muted)" }}>
+                <tr className="bg-slate-50 text-slate-500">
+                  <th className="text-start py-2 px-3 font-semibold rounded-s-lg">
                     {t("setup.fields.startDate")}
                   </th>
-                  <th className="text-end py-1 px-2 font-medium" style={{ color: "var(--color-muted)" }}>
+                  <th className="text-end py-2 px-3 font-semibold rounded-e-lg">
                     {t("overview.availableAfterCommitments")}
                   </th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-100">
                 {dataPoints.map((p, i) => (
-                  <tr key={i} className="border-t border-[var(--color-border)]">
-                    <td className="py-1 px-2">{formatDate(p.date, locale)}</td>
-                    <td className="py-1 px-2 text-end tabular-nums">{formatAmount(p.balanceMinor)}</td>
+                  <tr key={i} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="py-2 px-3 font-medium text-slate-700">{formatDate(p.date, locale)}</td>
+                    <td className="py-2 px-3 text-end font-semibold text-slate-900 tabular-nums">
+                      {formatAmount(p.balanceMinor)}
+                    </td>
                   </tr>
                 ))}
               </tbody>

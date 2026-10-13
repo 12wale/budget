@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, type ReactNode, type SelectHTMLAttributes } from "react";
+import { forwardRef, type SelectHTMLAttributes } from "react";
 
 type SelectProps = {
   label: string;
@@ -19,46 +19,53 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
       <div className="flex flex-col gap-1.5">
         <label
           htmlFor={id}
-          className="text-sm font-medium"
-          style={{ color: "var(--color-text)" }}
+          className="text-xs sm:text-sm font-semibold tracking-tight text-[var(--color-text)]"
         >
           {label}
           {props.required && (
-            <span className="ms-1 text-[var(--color-danger)]" aria-hidden="true">*</span>
+            <span className="ms-1 text-rose-500 font-bold" aria-hidden="true">*</span>
           )}
         </label>
 
-        <select
-          ref={ref}
-          id={id}
-          className={`
-            w-full rounded-[var(--radius-control)] border text-sm
-            bg-[var(--color-surface)] text-[var(--color-text)]
-            transition-colors duration-[var(--transition-fast)]
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:border-[var(--color-primary)]
-            disabled:opacity-50 disabled:cursor-not-allowed
-            ps-3 pe-8 py-2.5 min-h-[44px] appearance-none
-            ${error
-              ? "border-[var(--color-danger)] focus-visible:ring-[var(--color-danger)]"
-              : "border-[var(--color-border)]"
+        <div className="relative flex items-center">
+          <select
+            ref={ref}
+            id={id}
+            className={`
+              w-full rounded-[var(--radius-control)] border text-sm font-medium
+              bg-[var(--color-surface)] text-[var(--color-text)]
+              transition-all duration-[var(--transition-fast)]
+              focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--color-primary-glow)] focus-visible:border-[var(--color-primary)]
+              disabled:opacity-50 disabled:cursor-not-allowed
+              ps-3.5 pe-9 py-2.5 min-h-[46px] appearance-none cursor-pointer
+              ${error
+                ? "border-rose-400 focus-visible:ring-rose-100 focus-visible:border-rose-500"
+                : "border-[var(--color-border)] hover:border-slate-300"
+              }
+              ${className}
+            `}
+            aria-invalid={!!error}
+            aria-describedby={
+              [error ? errorId : "", helper ? helperId : ""].filter(Boolean).join(" ") || undefined
             }
-            ${className}
-          `}
-          aria-invalid={!!error}
-          aria-describedby={
-            [error ? errorId : "", helper ? helperId : ""].filter(Boolean).join(" ") || undefined
-          }
-          {...props}
-        >
-          {options.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+            {...props}
+          >
+            {options.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          <div
+            className="absolute inset-y-0 end-3.5 flex items-center pointer-events-none text-slate-400 text-xs"
+            aria-hidden="true"
+          >
+            ▼
+          </div>
+        </div>
 
         {helper && !error && (
-          <p id={helperId} className="text-xs" style={{ color: "var(--color-muted)" }}>
+          <p id={helperId} className="text-xs text-[var(--color-muted)] leading-relaxed">
             {helper}
           </p>
         )}
@@ -67,8 +74,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           <p
             id={errorId}
             role="alert"
-            className="text-xs font-medium"
-            style={{ color: "var(--color-danger)" }}
+            className="text-xs font-semibold text-rose-600 animate-fade-in"
           >
             {error}
           </p>

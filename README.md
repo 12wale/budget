@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ميزانيتي تكفّي؟ (Budget Survival Calculator)
 
-## Getting Started
+أداة تخطيط مالي تفاعلية وبسيطة تجيب على السؤال الأهم: **«ميزانيتي هتكفيني لحد إمتى؟»**
+A simple, private, local-first budget runway calculator built with Next.js 16 App Router, Tailwind CSS, and TypeScript.
 
-First, run the development server:
+---
+
+## 🌟 المميزات الرئيسية (Key Features)
+
+1. **الرؤية الأولى الفورية (Quick Setup & Overview)**:
+   - إدخال الرصيد المتاح، الالتزامات الثابتة (إيجار، فواتير)، الإنفاق اليومي المخطط، وتاريخ البداية والنهاية.
+   - حساب فوري وصارم بدون مشاكل تقريب الأعداد العشرية (Integer minor units).
+   - بطاقات إحصائية رئيسية:
+     - **المتبقي بعد الالتزامات** (Available After Commitments).
+     - **الحد اليومي المتاح** (Daily Safe Limit).
+     - **الوقت التقديري المتبقي** (Estimated Runway Days).
+     - **حالة الخطة** (Plan Health: صحية 🟢، تتجاوز الهدف 🟡، حرجة 🔴).
+   - رسم بياني تفاعلي لتوقعات استنزاف الرصيد (Runway Forecast Chart via Recharts) مع دعم كامل لوصول ذوي الاحتياجات الخاصة (Accessible Table View).
+
+2. **تسجيل المصروفات (Expense Tracking CRUD)**:
+   - تسجيل المصروفات اليومية مع تحديد الفئة (طعام، مواصلات، سكن، فواتير، ترفيه، وغيرها) مع أيقونات تعبيرية.
+   - تعديل وحذف المصروفات مع تأكيد الحذف.
+   - حساب إجمالي المصروفات والمتوسط اليومي الفعلي.
+
+3. **محاكي السيناريوهات (What-If Scenario Simulator)**:
+   - تجربة سيناريوهات بديلة للإنفاق اليومي (+10%، -10%، +25%، -25% أو بقيمة مخصصة) دون المساس بالبيانات الحقيقية.
+   - حساب الفارق بالأيام، وتاريخ نفاد الميزانية، والرصيد المتوقع عند نهاية الخطة.
+   - زر لتطبيق الخطة المقترحة مباشرة بضغطة زر.
+
+4. **الخصوصية والتخزين المحلي (Local-First & Private)**:
+   - 100% بدون خوادم خارجية — بياناتك في متصفحك فقط عبر `localStorage` بنسخة رقمية مدققة بـ Zod.
+   - تصدير المصروفات بصيغة Excel/CSV.
+   - تصدير واسترجاع نسخة احتياطية كاملة بصيغة JSON.
+   - حذف آمن وكامل للبيانات.
+
+5. **دعم ثنائي اللغة والاتجاه (Bilingual RTL/LTR)**:
+   - واجهة مستخدم عربية أصيلة افتراضيًا بالخط الأنيق `IBM Plex Sans Arabic` مع دعم كامل للإنجليزية بنقرة واحدة.
+   - أرقام لاتينية موحدة لمنع الالتباس المالي مع الأرقام الهندية.
+
+---
+
+## 🚀 التشغيل والتطوير (Getting Started)
 
 ```bash
+# تثبيت الحزم
+npm install
+
+# تشغيل خادم التطوير
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# فحص أنواع TypeScript
+npx tsc --noEmit
+
+# تشغيل حزمة الاختبارات الشاملة (26 اختبار لوحدات الحسابات والتواريخ والعملات والتخزين)
+npm test
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+افتح المتصفح على: [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📁 الهيكلية البرمجية (Architecture)
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `app/` — صفحات Next.js 16 App Router وتخطيط الصفحات.
+  - `(app)/overview/` — لوحة التحكم ونموذج البدء.
+  - `(app)/expenses/` — إدارة المصروفات.
+  - `(app)/simulator/` — محاكي السيناريوهات اليومية.
+  - `(app)/settings/` — تفضيلات اللغة، العملة، التصدير، والاستعادة.
+- `components/` — مكونات واجهة المستخدم (Buttons, Cards, Inputs, Modals, Badges, Charts).
+- `context/` — مزودات الحالة العامة (`BudgetContext`, `PreferencesContext`).
+- `lib/` — المكتبات الحسابية والمنطقية المنعزلة:
+  - `budget.calculations.ts` — خوارزميات الحسابات، الأيام المتبقية، وسيناريوهات المحاكاة.
+  - `currency.ts` — تحويل العملات بالوحدات الصغرى (piastres/cents) والتنسيق.
+  - `date.ts` — دوال حساب وتفاضل الأيام التقويمية الآمنة من التوقيت الصيفي.
+  - `storage.ts` — التخزين المحلي الآمن والمفحوص بواسطة Zod.
+  - `i18n.ts` — القواميس والمترجم ثنائي اللغة.
+- `tests/` — اختبارات الوحدة باستخدام Vitest و Testing Library.

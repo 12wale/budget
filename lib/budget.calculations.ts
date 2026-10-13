@@ -26,26 +26,36 @@ import {
 const ACTUAL_AVERAGE_WINDOW_DAYS = 7;
 const MIN_DAYS_FOR_ACTUAL_AVERAGE = 3;
 
+export function calculateDailyLimit(
+  remainingBalanceMinor: number,
+  remainingDays: number
+): number | null {
+  if (remainingDays <= 0) return null;
+  if (remainingBalanceMinor <= 0) return 0;
+  return Math.round(remainingBalanceMinor / remainingDays);
+}
+
 /**
  * Calculate the actual daily spending average over the last `windowDays` days.
  * Only uses expenses within the window. Returns null if insufficient data.
  */
 export function calculateActualDailyAverage(
   expenses: Expense[],
-  windowDays = ACTUAL_AVERAGE_WINDOW_DAYS
+  windowDays = ACTUAL_AVERAGE_WINDOW_DAYS,
+  minDays = MIN_DAYS_FOR_ACTUAL_AVERAGE,
+  asOfDate = todayISO()
 ): number | null {
-  const today = todayISO();
-  const windowStart = addDays(today, -(windowDays - 1));
+  const windowStart = addDays(asOfDate, -(windowDays - 1));
 
   const windowExpenses = expenses.filter(
-    (e) => e.date >= windowStart && e.date <= today
+    (e) => e.date >= windowStart && e.date <= asOfDate
   );
 
   if (windowExpenses.length === 0) return null;
 
   // Count distinct days with recorded expenses
   const daysWithExpenses = new Set(windowExpenses.map((e) => e.date)).size;
-  if (daysWithExpenses < MIN_DAYS_FOR_ACTUAL_AVERAGE) return null;
+  if (daysWithExpenses < minDays) return null;
 
   const total = windowExpenses.reduce((sum, e) => sum + e.amountMinor, 0);
   return Math.round(total / daysWithExpenses);

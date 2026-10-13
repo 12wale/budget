@@ -16,8 +16,12 @@ const MINOR_SCALES: Record<string, number> = {
   KWD: 3, // fils
 };
 
-function getScale(currency: string): number {
+export function getScale(currency: string): number {
   return MINOR_SCALES[currency] ?? 2;
+}
+
+export function getCurrencyDecimals(currency: string): number {
+  return getScale(currency);
 }
 
 /**

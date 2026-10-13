@@ -43,6 +43,27 @@ export function countCalendarDays(start: string, end: string): number {
 }
 
 /**
+ * Difference in calendar days (end - start).
+ * Not inclusive. Can be negative if end < start.
+ * Example: 2026-10-01 to 2026-10-10 = 9 days.
+ */
+export function daysBetween(start: string, end: string): number {
+  const s = parseISODate(start);
+  const e = parseISODate(end);
+  return Math.round((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+/**
+ * Validates strictly formatted YYYY-MM-DD date strings.
+ */
+export function isValidISODate(dateStr: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const date = new Date(y, m - 1, d, 12, 0, 0);
+  return date.getFullYear() === y && date.getMonth() === m - 1 && date.getDate() === d;
+}
+
+/**
  * Remaining calendar days from today (inclusive) through targetDate.
  * Returns 0 if targetDate is in the past.
  */

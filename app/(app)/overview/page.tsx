@@ -11,66 +11,75 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Modal } from "@/components/ui/Modal";
 import { SetupForm } from "@/components/budget/SetupForm";
 import { RunwayChart } from "@/components/charts/RunwayChart";
-import type { PlanStatus, BudgetSummary } from "@/types/budget.types";
+import type { PlanStatus } from "@/types/budget.types";
 import { formatNumber } from "@/lib/currency";
 import { formatDate } from "@/lib/date";
 import { getCategoryById } from "@/lib/categories";
 
 // ─────────────────────────────────────────────
-// Status → Badge mapping
+// Status Mapping
 // ─────────────────────────────────────────────
 
 type BadgeVariant = "neutral" | "success" | "warning" | "danger" | "primary";
 
-function statusBadge(status: PlanStatus): { variant: BadgeVariant; dot: string } {
-  const map: Record<PlanStatus, { variant: BadgeVariant; dot: string }> = {
-    healthy:           { variant: "success",  dot: "🟢" },
-    above_target:      { variant: "warning",  dot: "🟡" },
-    no_budget:         { variant: "danger",   dot: "🔴" },
-    no_days_remaining: { variant: "neutral",  dot: "⚫" },
-    insufficient_data: { variant: "neutral",  dot: "⚪" },
-    expired:           { variant: "neutral",  dot: "⚫" },
+function statusBadge(status: PlanStatus): { variant: BadgeVariant; dot: string; labelBg: string } {
+  const map: Record<PlanStatus, { variant: BadgeVariant; dot: string; labelBg: string }> = {
+    healthy:           { variant: "success",  dot: "🟢", labelBg: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+    above_target:      { variant: "warning",  dot: "🟡", labelBg: "bg-amber-50 text-amber-700 border-amber-200" },
+    no_budget:         { variant: "danger",   dot: "🔴", labelBg: "bg-red-50 text-red-700 border-red-200" },
+    no_days_remaining: { variant: "neutral",  dot: "⚫", labelBg: "bg-slate-100 text-slate-700 border-slate-200" },
+    insufficient_data: { variant: "neutral",  dot: "⚪", labelBg: "bg-slate-100 text-slate-700 border-slate-200" },
+    expired:           { variant: "neutral",  dot: "⚫", labelBg: "bg-slate-100 text-slate-700 border-slate-200" },
   };
-  return map[status] ?? { variant: "neutral", dot: "⚪" };
+  return map[status] ?? { variant: "neutral", dot: "⚪", labelBg: "bg-slate-100 text-slate-700 border-slate-200" };
 }
 
 // ─────────────────────────────────────────────
-// Summary Card component
+// Premium Stat Card
 // ─────────────────────────────────────────────
 
-function SummaryCard({
-  label,
+function StatCard({
+  title,
   value,
-  helper,
+  subtitle,
   icon,
-  accent = false,
-  className = "",
+  iconBg,
+  accentColor,
 }: {
-  label: string;
+  title: string;
   value: string | null;
-  helper?: string;
+  subtitle?: string;
   icon: string;
-  accent?: boolean;
-  className?: string;
+  iconBg: string;
+  accentColor?: string;
 }) {
   return (
-    <Card className={`animate-fade-in ${className}`} as="article">
-      <CardBody>
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <p className="text-sm font-medium" style={{ color: "var(--color-muted)" }}>
-            {label}
+    <Card hoverable as="article" className="relative overflow-hidden group">
+      {/* Top subtle highlight border */}
+      <div
+        className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"
+      />
+      <CardBody className="p-5 sm:p-6">
+        <div className="flex items-center justify-between gap-3 mb-3.5">
+          <p className="text-xs sm:text-sm font-semibold text-slate-500">
+            {title}
           </p>
-          <span className="text-xl" aria-hidden="true">{icon}</span>
+          <div
+            className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shadow-sm ${iconBg}`}
+          >
+            {icon}
+          </div>
         </div>
         <p
-          className={`text-2xl md:text-3xl font-bold tabular-nums ${accent ? "text-[var(--color-primary)]" : ""}`}
-          style={{ color: accent ? "var(--color-primary)" : "var(--color-text)" }}
+          className={`text-2xl sm:text-3xl font-extrabold tracking-tight tabular-nums ${
+            accentColor ? accentColor : "text-slate-900"
+          }`}
         >
           {value ?? "—"}
         </p>
-        {helper && (
-          <p className="text-xs mt-2" style={{ color: "var(--color-muted)" }}>
-            {helper}
+        {subtitle && (
+          <p className="text-xs text-slate-500 mt-2 font-medium">
+            {subtitle}
           </p>
         )}
       </CardBody>
@@ -83,27 +92,29 @@ function SummaryCard({
 // ─────────────────────────────────────────────
 
 export default function OverviewPage() {
-  const { plan, expenses, summary, ui, openModal, closeModal } = useBudget();
+  const { plan, expenses, summary } = useBudget();
   const { t, formatAmount, locale } = usePreferences();
   const [showEditModal, setShowEditModal] = useState(false);
 
-  // ── No plan yet: show setup ─────────────────
+  // ── 1. No Plan Yet: Premium Onboarding Screen ──
   if (!plan) {
     return (
-      <div className="max-w-xl mx-auto animate-slide-up">
-        {/* Hero */}
-        <div className="text-center mb-10">
-          <div className="text-6xl mb-4" aria-hidden="true">💰</div>
-          <h1 className="text-2xl md:text-3xl font-bold mb-3" style={{ color: "var(--color-text)" }}>
+      <div className="max-w-2xl mx-auto py-4 sm:py-8 animate-slide-up">
+        {/* Hero Banner */}
+        <div className="text-center mb-8 relative">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 text-3xl shadow-xl shadow-indigo-500/25 mb-5 animate-float">
+            💰
+          </div>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-3">
             {t("setup.headline")}
           </h1>
-          <p className="text-sm md:text-base" style={{ color: "var(--color-muted)" }}>
+          <p className="text-sm sm:text-base text-slate-600 max-w-md mx-auto leading-relaxed">
             {t("setup.subheadline")}
           </p>
         </div>
 
-        <Card>
-          <CardBody>
+        <Card className="shadow-elevated border-slate-200/80">
+          <CardBody className="p-6 sm:p-8">
             <SetupForm />
           </CardBody>
         </Card>
@@ -111,17 +122,19 @@ export default function OverviewPage() {
     );
   }
 
-  // ── Plan expired ────────────────────────────
+  // ── 2. Plan Expired ────────────────────────────
   if (summary?.status === "expired") {
     return (
-      <div className="max-w-xl mx-auto animate-fade-in text-center py-16">
-        <div className="text-5xl mb-4" aria-hidden="true">⏳</div>
-        <h1 className="text-xl font-bold mb-2">{t("overview.planExpired")}</h1>
-        <p className="text-sm mb-8" style={{ color: "var(--color-muted)" }}>
+      <div className="max-w-lg mx-auto animate-fade-in text-center py-16">
+        <div className="w-16 h-16 rounded-2xl bg-amber-50 text-3xl flex items-center justify-center mx-auto mb-4 border border-amber-200">
+          ⏳
+        </div>
+        <h1 className="text-xl font-bold text-slate-900 mb-2">{t("overview.planExpired")}</h1>
+        <p className="text-sm text-slate-500 mb-8 max-w-sm mx-auto">
           {t("overview.planExpiredSub")}
         </p>
-        <Button onClick={() => setShowEditModal(true)} variant="secondary">
-          {t("setup.edit")}
+        <Button onClick={() => setShowEditModal(true)} variant="primary">
+          ✏️ {t("setup.edit")}
         </Button>
         <Modal
           open={showEditModal}
@@ -139,91 +152,125 @@ export default function OverviewPage() {
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 5);
 
-  const { variant: statusVariant, dot: statusDot } = statusBadge(sum.status);
+  const { dot: statusDot, labelBg: statusLabelBg } = statusBadge(sum.status);
   const forecastLabel =
     sum.forecastMode === "actual"
       ? t("overview.forecastActual")
       : t("overview.forecastPlanned");
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Page header */}
-      <div className="flex items-center justify-between gap-4">
+    <div className="space-y-7 animate-fade-in">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold" style={{ color: "var(--color-text)" }}>
-            {t("overview.title")}
-          </h1>
-          <p className="text-xs mt-1" style={{ color: "var(--color-muted)" }}>
-            {t("common.disclaimer")}
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+              {t("overview.title")}
+            </h1>
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-bold border border-indigo-100">
+              {plan.currency}
+            </span>
+          </div>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            من <strong className="text-slate-700">{formatDate(plan.startDate, locale)}</strong> إلى <strong className="text-slate-700">{formatDate(plan.targetDate, locale)}</strong>
           </p>
         </div>
-        <Button variant="secondary" size="sm" onClick={() => setShowEditModal(true)}>
-          ✏️ {t("setup.edit")}
-        </Button>
+
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" size="sm" icon="✏️" onClick={() => setShowEditModal(true)}>
+            {t("setup.edit")}
+          </Button>
+          <Link href="/expenses">
+            <Button size="sm" icon="➕">
+              {t("expenses.addExpense")}
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      {/* ── 4 Summary Cards ────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <SummaryCard
-          label={t("overview.availableAfterCommitments")}
+      {/* ── 4 KPI Summary Cards ────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
+        <StatCard
+          title={t("overview.availableAfterCommitments")}
           value={formatAmount(sum.remainingBalanceMinor)}
-          helper={t("overview.availableHelper")}
+          subtitle={t("overview.availableHelper")}
           icon="💼"
-          accent
+          iconBg="bg-emerald-50 text-emerald-600 border border-emerald-100"
+          accentColor="text-emerald-700"
         />
-        <SummaryCard
-          label={t("overview.dailyLimit")}
+
+        <StatCard
+          title={t("overview.dailyLimit")}
           value={
             sum.dailyLimitMinor !== null
               ? formatAmount(sum.dailyLimitMinor)
               : t("errors.noPlan")
           }
-          helper={t("overview.dailyLimitHelper")}
+          subtitle={t("overview.dailyLimitHelper")}
           icon="📅"
+          iconBg="bg-indigo-50 text-indigo-600 border border-indigo-100"
+          accentColor="text-indigo-700"
         />
-        <SummaryCard
-          label={t("overview.estimatedRunway")}
+
+        <StatCard
+          title={t("overview.estimatedRunway")}
           value={
             sum.estimatedRunwayDays !== null
               ? `${formatNumber(sum.estimatedRunwayDays, locale)} ${t("common.days")}`
               : "—"
           }
-          helper={`${t("overview.forecastBased")}${forecastLabel}`}
+          subtitle={`${t("overview.forecastBased")}${forecastLabel}`}
           icon="📊"
+          iconBg="bg-sky-50 text-sky-600 border border-sky-100"
+          accentColor="text-sky-700"
         />
-        {/* Status card */}
-        <Card as="article" className="animate-fade-in">
-          <CardBody>
-            <div className="flex items-start justify-between gap-3 mb-3">
-              <p className="text-sm font-medium" style={{ color: "var(--color-muted)" }}>
+
+        {/* Plan Status Card */}
+        <Card hoverable as="article" className="relative overflow-hidden group">
+          <CardBody className="p-5 sm:p-6">
+            <div className="flex items-center justify-between gap-3 mb-3.5">
+              <p className="text-xs sm:text-sm font-semibold text-slate-500">
                 {t("overview.planStatus")}
               </p>
-              <span className="text-xl" aria-hidden="true">🎯</span>
+              <div className="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 border border-violet-100 flex items-center justify-center text-lg shadow-sm">
+                🎯
+              </div>
             </div>
-            <Badge variant={statusVariant} className="text-sm py-1.5 px-3">
-              {statusDot} {t(`status.${sum.status}`)}
-            </Badge>
-            {sum.estimatedExhaustionDate && (
-              <p className="text-xs mt-3" style={{ color: "var(--color-muted)" }}>
-                📆 {formatDate(sum.estimatedExhaustionDate, locale)}
+
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold border shadow-xs mb-2.5">
+              <span className="text-xs" aria-hidden="true">{statusDot}</span>
+              <span>{t(`status.${sum.status}`)}</span>
+            </div>
+
+            {sum.estimatedExhaustionDate ? (
+              <p className="text-xs text-slate-500 font-medium">
+                📆 موعد النفاد المتوقع: <strong className="text-slate-700">{formatDate(sum.estimatedExhaustionDate, locale)}</strong>
+              </p>
+            ) : (
+              <p className="text-xs text-slate-400">
+                الميزانية مستقرة لنهاية الخطة
               </p>
             )}
           </CardBody>
         </Card>
       </div>
 
-      {/* ── Forecast Chart ─────────────────── */}
+      {/* ── Forecast Area Chart ─────────────────── */}
       <RunwayChart plan={plan} summary={sum} />
 
-      {/* ── Recent Expenses ─────────────────── */}
+      {/* ── Recent Expenses List ────────────────── */}
       <Card>
-        <div className="px-5 py-4 md:px-6 border-b border-[var(--color-border)] flex items-center justify-between">
-          <h2 className="text-base font-semibold">{t("overview.recentExpenses")}</h2>
+        <div className="px-5 py-4 sm:px-6 border-b border-[var(--color-border)] flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-lg" aria-hidden="true">🧾</span>
+            <h2 className="text-base font-bold text-slate-900">{t("overview.recentExpenses")}</h2>
+          </div>
           <Link
             href="/expenses"
-            className="text-sm font-medium text-[var(--color-primary)] hover:underline"
+            className="text-xs sm:text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors flex items-center gap-1"
           >
-            {t("nav.expenses")} ←
+            <span>{t("nav.expenses")}</span>
+            <span aria-hidden="true" className="rtl-flip">→</span>
           </Link>
         </div>
 
@@ -234,29 +281,32 @@ export default function OverviewPage() {
             description={t("expenses.emptySubtext")}
             action={
               <Link href="/expenses">
-                <Button size="sm">{t("overview.addFirstExpense")}</Button>
+                <Button size="sm" icon="➕">{t("overview.addFirstExpense")}</Button>
               </Link>
             }
           />
         ) : (
-          <ul className="divide-y divide-[var(--color-border)]" role="list">
+          <ul className="divide-y divide-slate-100" role="list">
             {recentExpenses.map((expense) => {
               const category = getCategoryById(expense.categoryId);
               return (
-                <li key={expense.id} className="flex items-center gap-3 px-5 py-3 md:px-6 hover:bg-[var(--color-surface-2)] transition-colors">
-                  <span className="text-xl w-8 text-center flex-shrink-0" aria-hidden="true">
+                <li
+                  key={expense.id}
+                  className="flex items-center gap-3.5 px-5 py-3.5 sm:px-6 hover:bg-slate-50/70 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-xl shrink-0 shadow-xs">
                     {category?.icon ?? "📦"}
-                  </span>
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate" style={{ color: "var(--color-text)" }}>
+                    <p className="text-sm font-bold text-slate-900 truncate">
                       {t(category?.labelKey ?? "categories.other")}
                     </p>
-                    <p className="text-xs" style={{ color: "var(--color-muted)" }}>
+                    <p className="text-xs text-slate-500 mt-0.5">
                       {formatDate(expense.date, locale)}
                       {expense.note && ` · ${expense.note}`}
                     </p>
                   </div>
-                  <p className="text-sm font-semibold tabular-nums flex-shrink-0">
+                  <p className="text-sm sm:text-base font-extrabold text-slate-900 tabular-nums shrink-0">
                     {formatAmount(expense.amountMinor)}
                   </p>
                 </li>
@@ -265,20 +315,6 @@ export default function OverviewPage() {
           </ul>
         )}
       </Card>
-
-      {/* ── Action Bar ─────────────────── */}
-      <div className="flex flex-wrap gap-3 justify-center md:justify-start">
-        <Link href="/expenses">
-          <Button size="lg" icon="➕">
-            {t("expenses.addExpense")}
-          </Button>
-        </Link>
-        <Link href="/simulator">
-          <Button variant="secondary" size="lg" icon="🔮">
-            {t("nav.simulator")}
-          </Button>
-        </Link>
-      </div>
 
       {/* Edit Plan Modal */}
       <Modal
