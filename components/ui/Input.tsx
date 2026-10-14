@@ -46,7 +46,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={id}
             className={`
-              w-full rounded-[var(--radius-control)] border text-sm font-medium
+              w-full rounded-[var(--radius-control)] border text-base sm:text-sm font-medium
               bg-[var(--color-surface)] text-[var(--color-text)]
               placeholder:text-[var(--color-muted)] placeholder:font-normal
               transition-all duration-[var(--transition-fast)]

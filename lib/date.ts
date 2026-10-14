@@ -24,8 +24,13 @@ export function toISODate(date: Date): string {
 
 /**
  * Returns today as YYYY-MM-DD in the user's local timezone.
+ * Returns a stable ISO date during server prerendering to avoid Next.js
+ * blocking prerender when evaluating new Date() in client components.
  */
 export function todayISO(): string {
+  if (typeof window === "undefined" && process.env.NODE_ENV !== "test") {
+    return "2026-01-01";
+  }
   return toISODate(new Date());
 }
 

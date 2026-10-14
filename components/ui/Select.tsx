@@ -32,7 +32,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             ref={ref}
             id={id}
             className={`
-              w-full rounded-[var(--radius-control)] border text-sm font-medium
+              w-full rounded-[var(--radius-control)] border text-base sm:text-sm font-medium
               bg-[var(--color-surface)] text-[var(--color-text)]
               transition-all duration-[var(--transition-fast)]
               focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--color-primary-glow)] focus-visible:border-[var(--color-primary)]

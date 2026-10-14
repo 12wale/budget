@@ -234,10 +234,10 @@ export default function SimulatorPage() {
       </Card>
 
       {/* Comparison Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
         {/* Adjusted Runway */}
         <Card hoverable as="article">
-          <CardBody className="p-5">
+          <CardBody className="p-4 sm:p-5">
             <p className="text-xs font-semibold text-slate-500 mb-1">
               {t("simulator.runwayLabel")}
             </p>
@@ -254,7 +254,7 @@ export default function SimulatorPage() {
 
         {/* Difference in Days */}
         <Card hoverable as="article">
-          <CardBody className="p-5">
+          <CardBody className="p-4 sm:p-5">
             <p className="text-xs font-semibold text-slate-500 mb-1">
               {t("simulator.differenceLabel")}
             </p>
@@ -281,7 +281,7 @@ export default function SimulatorPage() {
 
         {/* Estimated Exhaustion Date */}
         <Card hoverable as="article">
-          <CardBody className="p-5">
+          <CardBody className="p-4 sm:p-5">
             <p className="text-xs font-semibold text-slate-500 mb-1">
               {t("simulator.exhaustionLabel")}
             </p>
@@ -298,7 +298,7 @@ export default function SimulatorPage() {
 
         {/* Projected Balance at Target Date */}
         <Card hoverable as="article">
-          <CardBody className="p-5">
+          <CardBody className="p-4 sm:p-5">
             <p className="text-xs font-semibold text-slate-500 mb-1">
               {t("simulator.balanceOnTarget")}
             </p>
@@ -316,9 +316,9 @@ export default function SimulatorPage() {
 
       {/* Apply Proposed Plan Card */}
       <Card className="bg-gradient-to-r from-indigo-50/70 via-white to-cyan-50/50 border-indigo-200/80 shadow-xs">
-        <CardBody className="p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <CardBody className="p-4 sm:p-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
           <div>
-            <h3 className="text-base font-bold text-slate-900">
+            <h3 className="text-sm sm:text-base font-bold text-slate-900">
               {t("simulator.applyPlan")}
             </h3>
             <p className="text-xs sm:text-sm text-slate-600 mt-1">
@@ -329,7 +329,7 @@ export default function SimulatorPage() {
             size="md"
             onClick={() => setIsConfirmOpen(true)}
             disabled={currentAdjustedMinor === baselineMinor}
-            className="shrink-0"
+            className="w-full sm:w-auto shrink-0"
           >
             {t("simulator.applyPlan")}
           </Button>

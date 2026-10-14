@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { ExpenseFormSchema } from "@/types/budget.schemas";
 import type { Expense } from "@/types/budget.types";
 import { useBudget } from "@/context/BudgetContext";
@@ -29,10 +29,20 @@ export function ExpenseForm({ expense, onSuccess, onCancel }: ExpenseFormProps) 
 
   const [values, setValues] = useState({
     amount: expense ? String(expense.amountMinor / 100) : "",
-    date: expense ? expense.date : todayISO(),
+    date: expense ? expense.date : "",
     categoryId: expense ? expense.categoryId : "food",
     note: expense?.note ?? "",
   });
+
+  // Populate today's date after mount to prevent SSR new Date() evaluation
+  useEffect(() => {
+    if (!expense && !values.date) {
+      setValues((prev) => ({
+        ...prev,
+        date: todayISO(),
+      }));
+    }
+  }, [expense, values.date]);
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
@@ -46,9 +56,11 @@ export function ExpenseForm({ expense, onSuccess, onCancel }: ExpenseFormProps) 
     e.preventDefault();
     setLoading(true);
 
+    const resolvedDate = values.date || todayISO();
+
     const result = ExpenseFormSchema.safeParse({
       amount: values.amount,
-      date: values.date,
+      date: resolvedDate,
       categoryId: values.categoryId,
       note: values.note.trim() ? values.note.trim() : undefined,
     });

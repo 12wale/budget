@@ -233,56 +233,77 @@ export function buildForecastDataPoints(
   summary: BudgetSummary
 ): Array<{ date: string; balanceMinor: number; isProjected: boolean }> {
   const today = todayISO();
-  const points: Array<{ date: string; balanceMinor: number; isProjected: boolean }> = [];
+  const pointMap = new Map<string, { date: string; balanceMinor: number; isProjected: boolean }>();
 
-  // Start of plan: reserved balance
-  points.push({
-    date: plan.startDate,
-    balanceMinor: summary.reservedBalanceMinor,
-    isProjected: false,
-  });
+  // Start date point (if start date is before today)
+  if (plan.startDate < today) {
+    pointMap.set(plan.startDate, {
+      date: plan.startDate,
+      balanceMinor: summary.reservedBalanceMinor,
+      isProjected: false,
+    });
+  }
 
-  // Today's actual remaining balance
-  points.push({
+  // Today's actual remaining balance point
+  pointMap.set(today, {
     date: today,
     balanceMinor: summary.remainingBalanceMinor,
     isProjected: false,
   });
 
-  // Future projected points (every 7 days until target or exhaustion)
-  if (summary.spendingBaselineMinor > 0 && summary.remainingDays > 0) {
-    let currentBalance = summary.remainingBalanceMinor;
-    const step = 7; // days
+  // Future projected trajectory
+  if (summary.spendingBaselineMinor > 0 && summary.remainingDays > 0 && summary.remainingBalanceMinor > 0) {
+    const totalRemaining = summary.remainingDays;
+    // Choose sensible interval: 1 day if total <= 10, else 3-7 days
+    const step = totalRemaining <= 10 ? 2 : totalRemaining <= 30 ? 5 : 7;
     let daysAhead = step;
+    let currentBalance = summary.remainingBalanceMinor;
 
-    while (daysAhead <= summary.remainingDays && currentBalance > 0) {
+    while (daysAhead < totalRemaining && currentBalance > 0) {
+      const projectedDate = addDays(today, daysAhead);
       const projectedBalance = Math.max(
         0,
-        currentBalance - summary.spendingBaselineMinor * step
+        summary.remainingBalanceMinor - summary.spendingBaselineMinor * daysAhead
       );
-      points.push({
-        date: addDays(today, daysAhead),
+
+      pointMap.set(projectedDate, {
+        date: projectedDate,
         balanceMinor: projectedBalance,
         isProjected: true,
       });
+
       currentBalance = projectedBalance;
+      if (projectedBalance === 0) break;
       daysAhead += step;
     }
 
-    // Always include target date endpoint
+    // Add exact exhaustion date point if runway ends before target
+    if (
+      summary.estimatedExhaustionDate &&
+      summary.estimatedExhaustionDate < plan.targetDate &&
+      summary.estimatedExhaustionDate > today
+    ) {
+      pointMap.set(summary.estimatedExhaustionDate, {
+        date: summary.estimatedExhaustionDate,
+        balanceMinor: 0,
+        isProjected: true,
+      });
+    }
+
+    // End point at plan target date
     const targetBalance = Math.max(
       0,
-      summary.remainingBalanceMinor -
-        summary.spendingBaselineMinor * summary.remainingDays
+      summary.remainingBalanceMinor - summary.spendingBaselineMinor * summary.remainingDays
     );
-    points.push({
+    pointMap.set(plan.targetDate, {
       date: plan.targetDate,
       balanceMinor: targetBalance,
       isProjected: true,
     });
   }
 
-  return points;
+  // Sort chronologically
+  return Array.from(pointMap.values()).sort((a, b) => a.date.localeCompare(b.date));
 }
 
 // ─────────────────────────────────────────────

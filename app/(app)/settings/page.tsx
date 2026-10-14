@@ -145,7 +145,7 @@ export default function SettingsPage() {
                 تنزيل جميع المصاريف المسجلة في ملف CSV متوافق مع Excel.
               </p>
             </div>
-            <Button variant="secondary" size="sm" onClick={handleExportCSV}>
+            <Button variant="secondary" size="sm" className="w-full sm:w-auto" onClick={handleExportCSV}>
               📥 تصدير CSV
             </Button>
           </div>
@@ -157,13 +157,14 @@ export default function SettingsPage() {
                 حفظ خطتك ومصاريفك وتفضيلاتك في ملف للرجوع إليه أو نقله لجهاز آخر.
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="secondary" size="sm" onClick={handleExportJSON}>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Button variant="secondary" size="sm" className="flex-1 sm:flex-initial" onClick={handleExportJSON}>
                 💾 حفظ نسخة
               </Button>
               <Button
                 variant="secondary"
                 size="sm"
+                className="flex-1 sm:flex-initial"
                 onClick={() => fileInputRef.current?.click()}
               >
                 📂 استعادة نسخة
@@ -208,6 +209,7 @@ export default function SettingsPage() {
             <Button
               variant="danger"
               size="sm"
+              className="w-full sm:w-auto"
               onClick={() => setIsResetModalOpen(true)}
             >
               🗑️ {t("settings.resetAll")}

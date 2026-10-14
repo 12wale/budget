@@ -35,7 +35,7 @@ export default function ExpensesPage() {
             سجل وتتبع جميع مصاريفك اليومية بدقة وسهولة.
           </p>
         </div>
-        <Button size="md" icon="➕" onClick={() => setAddOpen(true)}>
+        <Button size="md" icon="➕" className="w-full sm:w-auto" onClick={() => setAddOpen(true)}>
           {t("expenses.addExpense")}
         </Button>
       </div>
@@ -100,24 +100,24 @@ export default function ExpensesPage() {
               return (
                 <li
                   key={expense.id}
-                  className="flex items-center gap-3.5 px-5 py-4 sm:px-6 hover:bg-slate-50/70 transition-colors group"
+                  className="flex items-center gap-2.5 sm:gap-3.5 px-3.5 sm:px-6 py-3 sm:py-4 hover:bg-slate-50/70 transition-colors group"
                 >
-                  <div className="w-11 h-11 rounded-2xl bg-slate-100 border border-slate-200/60 flex items-center justify-center text-2xl shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+                  <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-slate-100 border border-slate-200/60 flex items-center justify-center text-xl sm:text-2xl shrink-0 shadow-xs group-hover:scale-105 transition-transform">
                     {category?.icon ?? "📦"}
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-bold text-slate-900 truncate">
+                      <p className="text-xs sm:text-sm font-bold text-slate-900 truncate">
                         {t(category?.labelKey ?? "categories.other")}
                       </p>
                     </div>
-                    <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                    <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
                       <span>{formatDate(expense.date, locale)}</span>
                       {expense.note && (
                         <>
                           <span>•</span>
-                          <span className="text-slate-600 bg-slate-100/80 px-2 py-0.5 rounded-md">
+                          <span className="text-slate-600 bg-slate-100/80 px-1.5 py-0.5 rounded-md truncate max-w-[120px] sm:max-w-none">
                             {expense.note}
                           </span>
                         </>
@@ -125,8 +125,8 @@ export default function ExpensesPage() {
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-3.5 shrink-0">
-                    <p className="text-base sm:text-lg font-extrabold text-slate-900 tabular-nums">
+                  <div className="flex items-center gap-2 sm:gap-3.5 shrink-0">
+                    <p className="text-sm sm:text-base font-extrabold text-slate-900 tabular-nums">
                       {formatAmount(expense.amountMinor)}
                     </p>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { BudgetSetupFormSchema } from "@/types/budget.schemas";
 import type { BudgetPlan } from "@/types/budget.types";
 import { useBudget } from "@/context/BudgetContext";
@@ -24,17 +24,27 @@ export function SetupForm({ editMode = false, onSuccess }: SetupFormProps) {
   const { plan, setPlan, closeModal } = useBudget();
   const { t, preferences } = usePreferences();
 
-  const todayStr = todayISO();
-  const defaultTarget = addDays(todayStr, 30);
-
   const [values, setValues] = useState({
     startingBalance: plan ? String(plan.startingBalanceMinor / 100) : "",
     currency: plan?.currency ?? preferences.currency,
-    startDate: plan?.startDate ?? todayStr,
-    targetDate: plan?.targetDate ?? defaultTarget,
+    startDate: plan?.startDate ?? "",
+    targetDate: plan?.targetDate ?? "",
     fixedCommitments: plan ? String(plan.fixedCommitmentsMinor / 100) : "0",
     plannedDailySpend: plan ? String(plan.plannedDailySpendMinor / 100) : "",
   });
+
+  // Populate default dates after client mount to prevent SSR new Date() evaluation
+  useEffect(() => {
+    if (!plan && !values.startDate) {
+      const todayStr = todayISO();
+      const defaultTarget = addDays(todayStr, 30);
+      setValues((v) => ({
+        ...v,
+        startDate: v.startDate || todayStr,
+        targetDate: v.targetDate || defaultTarget,
+      }));
+    }
+  }, [plan, values.startDate]);
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
@@ -48,7 +58,14 @@ export function SetupForm({ editMode = false, onSuccess }: SetupFormProps) {
     e.preventDefault();
     setLoading(true);
 
-    const result = BudgetSetupFormSchema.safeParse(values);
+    const resolvedStartDate = values.startDate || todayISO();
+    const resolvedTargetDate = values.targetDate || addDays(resolvedStartDate, 30);
+
+    const result = BudgetSetupFormSchema.safeParse({
+      ...values,
+      startDate: resolvedStartDate,
+      targetDate: resolvedTargetDate,
+    });
 
     if (!result.success) {
       const fieldErrors: FormErrors = {};
@@ -125,7 +142,7 @@ export function SetupForm({ editMode = false, onSuccess }: SetupFormProps) {
           value={values.startDate}
           onChange={(e) => set("startDate", e.target.value)}
           error={errors.startDate}
-          max={values.targetDate}
+          max={values.targetDate || undefined}
         />
         <Input
           id="targetDate"
@@ -135,7 +152,7 @@ export function SetupForm({ editMode = false, onSuccess }: SetupFormProps) {
           value={values.targetDate}
           onChange={(e) => set("targetDate", e.target.value)}
           error={errors.targetDate}
-          min={values.startDate}
+          min={values.startDate || undefined}
         />
       </div>
 

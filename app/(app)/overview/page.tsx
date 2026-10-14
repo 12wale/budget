@@ -176,12 +176,18 @@ export default function OverviewPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button variant="secondary" size="sm" icon="✏️" onClick={() => setShowEditModal(true)}>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Button
+            variant="secondary"
+            size="sm"
+            icon="✏️"
+            className="flex-1 sm:flex-initial"
+            onClick={() => setShowEditModal(true)}
+          >
             {t("setup.edit")}
           </Button>
-          <Link href="/expenses">
-            <Button size="sm" icon="➕">
+          <Link href="/expenses" className="flex-1 sm:flex-initial">
+            <Button size="sm" icon="➕" className="w-full">
               {t("expenses.addExpense")}
             </Button>
           </Link>

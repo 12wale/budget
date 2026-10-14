@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans_Arabic } from "next/font/google";
 import "./globals.css";
 
@@ -10,26 +10,31 @@ const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
   preload: true,
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
+  themeColor: "#4F46E5",
+};
+
 export const metadata: Metadata = {
   title: {
-    default: "ميزانيتي تكفّي؟",
-    template: "%s | ميزانيتي تكفّي؟",
+    default: "جيبك",
+    template: "%s | جيبك",
+  },
+  icons:{
+    icon:"/logo.jpg"
   },
   description:
     "احسب ميزانيتك وشوف هتكفيك لحد إمتى. أداة تخطيط مالي بسيطة وخاصة — بياناتك على جهازك بس.",
   keywords: ["ميزانية", "تخطيط مالي", "مصاريف", "بجت", "budget", "calculator"],
   openGraph: {
-    title: "ميزانيتي تكفّي؟",
+    title: "جيبك",
     description: "احسب ميزانيتك وشوف هتكفيك لحد إمتى.",
     locale: "ar_EG",
     type: "website",
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-  },
-  themeColor: "#2563EB",
 };
 
 export default function RootLayout({
@@ -44,7 +49,7 @@ export default function RootLayout({
       className={ibmPlexSansArabic.variable}
       suppressHydrationWarning
     >
-      <body className="min-h-dvh flex flex-col bg-[var(--color-background)] text-[var(--color-text)]">
+      <body className="min-h-dvh flex flex-col bg-[var(--color-background)] text-[var(--color-text)] antialiased overflow-x-hidden">
         {children}
       </body>
     </html>

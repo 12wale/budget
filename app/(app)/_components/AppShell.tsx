@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { usePreferences } from "@/context/PreferencesContext";
 import { useBudget } from "@/context/BudgetContext";
+import { useAuth } from "@/context/AuthContext";
 
 type NavItem = {
   href: string;
@@ -19,12 +20,56 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 // ─────────────────────────────────────────────
+// Mobile Top Bar
+// ─────────────────────────────────────────────
+
+export function MobileTopBar() {
+  const { t } = usePreferences();
+  const { plan } = useBudget();
+
+  return (
+    <header className="md:hidden sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 py-2.5 flex items-center justify-between shadow-2xs">
+      <Link href="/overview" className="flex items-center gap-2.5">
+        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-base bg-gradient-to-tr from-indigo-600 to-cyan-400 text-white shadow-xs">
+          💰
+        </div>
+        <span className="font-bold text-sm text-slate-900 tracking-tight">
+          {t("appName")}
+        </span>
+      </Link>
+
+      {plan && (
+        <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
+          {plan.currency}
+        </span>
+      )}
+    </header>
+  );
+}
+
+// ─────────────────────────────────────────────
 // Desktop Sidebar
 // ─────────────────────────────────────────────
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { t } = usePreferences();
+  const { user, signOut } = useAuth();
+
+  async function handleSignOut() {
+    await signOut();
+    router.push("/login");
+  }
+
+  const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
+  const fullName = (user?.user_metadata?.full_name ?? user?.email ?? "مستخدم") as string;
+  const initials = fullName
+    .split(" ")
+    .map((n: string) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
     <aside
@@ -94,22 +139,48 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Footer Info */}
-      <div className="p-4 mx-3 mb-4 rounded-xl bg-slate-50 border border-slate-100">
-        <div className="flex items-center gap-2 mb-1.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span className="text-[11px] font-bold text-slate-700">تخزين محلي آمن</span>
-        </div>
-        <p className="text-[11px] text-slate-400 leading-normal">
-          {t("common.disclaimer")}
-        </p>
+      {/* User Profile + Sign Out */}
+      <div className="p-3 mx-3 mb-4 rounded-xl border border-slate-100 bg-slate-50/80">
+        {user ? (
+          <div className="flex items-center gap-2.5">
+            {/* Avatar */}
+            <div className="shrink-0 w-9 h-9 rounded-xl overflow-hidden bg-gradient-to-br from-indigo-400 to-cyan-400 flex items-center justify-center text-white text-xs font-bold shadow-xs">
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" />
+              ) : (
+                <span>{initials}</span>
+              )}
+            </div>
+            {/* Name */}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-slate-800 truncate">{fullName}</p>
+              <p className="text-[10px] text-slate-400 truncate">{user.email}</p>
+            </div>
+            {/* Sign out button */}
+            <button
+              type="button"
+              onClick={handleSignOut}
+              title="تسجيل الخروج"
+              className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors text-sm"
+              aria-label="تسجيل الخروج"
+            >
+              ⏻
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[11px] font-bold text-slate-700">تخزين محلي آمن</span>
+          </div>
+        )}
       </div>
     </aside>
   );
 }
 
 // ─────────────────────────────────────────────
-// Mobile Bottom Navigation
+// Mobile Bottom Navigation (Responsive & Touch-Optimized)
 // ─────────────────────────────────────────────
 
 export function BottomNav() {
@@ -118,8 +189,8 @@ export function BottomNav() {
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-lg border-t border-[var(--color-border)] flex items-center shadow-lg"
-      style={{ height: "var(--bottom-nav-height)", paddingBottom: "env(safe-area-inset-bottom)" }}
+      className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-lg border-t border-slate-200/90 flex items-center justify-around shadow-lg px-2 pb-[env(safe-area-inset-bottom,4px)]"
+      style={{ height: "calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px))" }}
       aria-label={t("nav.overview")}
     >
       {NAV_ITEMS.map((item) => {
@@ -129,21 +200,23 @@ export function BottomNav() {
             key={item.href}
             href={item.href}
             className={`
-              flex-1 flex flex-col items-center justify-center gap-1 py-1
-              text-xs font-semibold transition-all duration-[var(--transition-fast)]
-              min-h-[48px]
-              ${isActive ? "text-indigo-600 font-bold" : "text-slate-500 hover:text-slate-700"}
+              flex-1 flex flex-col items-center justify-center py-1.5 px-1
+              transition-all duration-[var(--transition-fast)]
+              min-h-[48px] max-w-[84px]
+              ${isActive ? "text-indigo-600 font-bold" : "text-slate-500 hover:text-slate-700 font-medium"}
             `}
             aria-current={isActive ? "page" : undefined}
           >
             <div
-              className={`w-9 h-7 rounded-lg flex items-center justify-center transition-all ${
-                isActive ? "bg-indigo-50 scale-105" : ""
+              className={`w-9 h-7 rounded-xl flex items-center justify-center transition-all ${
+                isActive ? "bg-indigo-50 scale-105 shadow-2xs" : ""
               }`}
             >
               <span className="text-lg leading-none" aria-hidden="true">{item.icon}</span>
             </div>
-            <span className="text-[10px] leading-tight">{t(item.labelKey)}</span>
+            <span className="text-[10px] leading-tight mt-0.5 truncate max-w-full">
+              {t(item.labelKey)}
+            </span>
           </Link>
         );
       })}
@@ -169,9 +242,9 @@ export function StorageErrorBanner() {
   return (
     <div
       role="alert"
-      className="fixed top-5 inset-x-4 z-50 mx-auto max-w-md px-4 py-3 rounded-2xl text-sm font-semibold shadow-elevated animate-slide-up flex items-center gap-3 bg-red-50 text-red-700 border border-red-200"
+      className="fixed top-14 md:top-5 inset-x-3 sm:inset-x-4 z-50 mx-auto max-w-md px-4 py-3 rounded-2xl text-xs sm:text-sm font-semibold shadow-elevated animate-slide-up flex items-center gap-3 bg-red-50 text-red-700 border border-red-200"
     >
-      <span className="text-lg" aria-hidden="true">⚠️</span>
+      <span className="text-lg shrink-0" aria-hidden="true">⚠️</span>
       <span className="flex-1">{message}</span>
     </div>
   );
