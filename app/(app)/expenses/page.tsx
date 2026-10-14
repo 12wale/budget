@@ -190,9 +190,10 @@ export default function ExpensesPage() {
             </Button>
             <Button
               variant="danger"
-              onClick={() => {
-                if (deleteTarget) deleteExpense(deleteTarget.id);
-                setDeleteTarget(null);
+              onClick={async () => {
+                if (!deleteTarget) return;
+                const deleted = await deleteExpense(deleteTarget.id);
+                if (deleted) setDeleteTarget(null);
               }}
             >
               {t("common.delete")}

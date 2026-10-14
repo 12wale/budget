@@ -62,14 +62,15 @@ export default function SimulatorPage() {
     setHasApplied(false);
   }
 
-  function handleApplyPlan() {
+  async function handleApplyPlan() {
     if (!plan || !simulation) return;
     const now = new Date().toISOString();
-    setPlan({
+    const saved = await setPlan({
       ...plan,
       plannedDailySpendMinor: simulation.adjustedDailySpendMinor,
       updatedAt: now,
     });
+    if (!saved) return;
     setIsConfirmOpen(false);
     setHasApplied(true);
   }

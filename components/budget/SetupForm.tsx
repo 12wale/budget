@@ -54,7 +54,7 @@ export function SetupForm({ editMode = false, onSuccess }: SetupFormProps) {
     setErrors((e) => ({ ...e, [key]: undefined }));
   }
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
 
@@ -94,8 +94,9 @@ export function SetupForm({ editMode = false, onSuccess }: SetupFormProps) {
       updatedAt: now,
     };
 
-    setPlan(newPlan);
+    const saved = await setPlan(newPlan);
     setLoading(false);
+    if (!saved) return;
     onSuccess?.();
     if (editMode) closeModal();
   }

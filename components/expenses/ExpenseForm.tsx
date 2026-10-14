@@ -52,7 +52,7 @@ export function ExpenseForm({ expense, onSuccess, onCancel }: ExpenseFormProps) 
     setErrors((prev) => ({ ...prev, [key]: undefined }));
   }
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
 
@@ -88,7 +88,9 @@ export function ExpenseForm({ expense, onSuccess, onCancel }: ExpenseFormProps) 
         note: data.note,
         updatedAt: now,
       };
-      updateExpense(updated);
+      const saved = await updateExpense(updated);
+      setLoading(false);
+      if (!saved) return;
     } else {
       const newExpense: Expense = {
         id: crypto.randomUUID(),
@@ -99,10 +101,11 @@ export function ExpenseForm({ expense, onSuccess, onCancel }: ExpenseFormProps) 
         createdAt: now,
         updatedAt: now,
       };
-      addExpense(newExpense);
+      const saved = await addExpense(newExpense);
+      setLoading(false);
+      if (!saved) return;
     }
 
-    setLoading(false);
     onSuccess?.();
   }
 

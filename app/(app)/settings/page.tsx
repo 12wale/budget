@@ -15,15 +15,13 @@ import {
   exportBackupJSON,
   downloadJSON,
   validateBackupJSON,
-  clearAppData,
-  saveAppData,
 } from "@/lib/storage";
 import type { Language, LocalAppDataV1 } from "@/types/budget.types";
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { plan, expenses, resetAll } = useBudget();
-  const { preferences, setLanguage, setCurrency, t } = usePreferences();
+  const { plan, expenses, resetAll, replaceData } = useBudget();
+  const { preferences, setLanguage, setCurrency, setPreferences, t } = usePreferences();
 
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
@@ -68,7 +66,7 @@ export default function SettingsPage() {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const content = event.target?.result as string;
       const res = validateBackupJSON(content);
       if (!res.ok) {
@@ -76,12 +74,13 @@ export default function SettingsPage() {
         return;
       }
 
-      // Valid backup: save and reload
-      saveAppData(res.data);
-      setImportStatus("تم استيراد النسخة الاحتياطية بنجاح! يتم إعادة التحميل…");
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      const saved = await replaceData(res.data);
+      if (!saved) {
+        setImportStatus("تعذر استيراد النسخة الاحتياطية إلى قاعدة البيانات.");
+        return;
+      }
+      setPreferences(res.data.preferences);
+      setImportStatus("تم استيراد النسخة الاحتياطية إلى حسابك بنجاح.");
     };
 
     reader.readAsText(file);
@@ -90,9 +89,9 @@ export default function SettingsPage() {
     }
   }
 
-  function handleConfirmReset() {
-    clearAppData();
-    resetAll();
+  async function handleConfirmReset() {
+    const deleted = await resetAll();
+    if (!deleted) return;
     setIsResetModalOpen(false);
     router.push("/overview");
   }
@@ -184,10 +183,10 @@ export default function SettingsPage() {
               role="alert"
               className="p-3 rounded-lg text-xs font-medium"
               style={{
-                background: importStatus.includes("خطأ")
+                background: importStatus.includes("خطأ") || importStatus.includes("تعذر")
                   ? "var(--color-danger-subtle)"
                   : "var(--color-success-subtle)",
-                color: importStatus.includes("خطأ")
+                color: importStatus.includes("خطأ") || importStatus.includes("تعذر")
                   ? "var(--color-danger)"
                   : "var(--color-success)",
               }}
@@ -230,7 +229,7 @@ export default function SettingsPage() {
           <p>{t("settings.privacyText")}</p>
           <div className="pt-2 border-t border-[var(--color-border)] flex items-center justify-between text-xs">
             <span>{t("settings.appVersion")}: 1.0.0</span>
-            <span>بناء محلي آمن 100%</span>
+              <span>حفظ سحابي خاص بالحساب</span>
           </div>
         </CardBody>
       </Card>
@@ -259,7 +258,7 @@ export default function SettingsPage() {
             ⚠️ {t("settings.resetConfirm")}
           </p>
           <p style={{ color: "var(--color-muted)" }}>
-            سيتم مسح الخطة المالية المسجلة وقائمة المصروفات بالكامل من متصفحك.
+              سيتم حذف خطتك المالية ومصروفاتك من قاعدة بيانات حسابك.
           </p>
         </div>
       </Modal>

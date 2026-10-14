@@ -142,6 +142,7 @@ export type UIState = {
 // ─────────────────────────────────────────────
 
 export type BudgetAction =
+  | { type: "START_LOAD" }
   | { type: "SET_PLAN"; plan: BudgetPlan }
   | { type: "ADD_EXPENSE"; expense: Expense }
   | { type: "UPDATE_EXPENSE"; expense: Expense }

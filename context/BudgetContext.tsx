@@ -7,7 +7,9 @@ import {
   useEffect,
   useMemo,
   useReducer,
+  useRef,
   type ReactNode,
+  useState,
 } from "react";
 import type {
   BudgetAction,
@@ -18,7 +20,16 @@ import type {
   UIState,
 } from "@/types/budget.types";
 import { calculateBudgetSummary } from "@/lib/budget.calculations";
-import { loadAppData, saveAppData } from "@/lib/storage";
+import { clearAppData, loadAppData } from "@/lib/storage";
+import { useAuth } from "@/context/AuthContext";
+import {
+  clearUserBudget,
+  deleteUserExpense,
+  loadUserBudget,
+  replaceUserData,
+  saveUserExpense,
+  saveUserPlan,
+} from "@/lib/supabase/repository";
 
 // ─────────────────────────────────────────────
 // State shape
@@ -48,6 +59,8 @@ const INITIAL_STATE: BudgetState = {
 
 function budgetReducer(state: BudgetState, action: BudgetAction): BudgetState {
   switch (action.type) {
+    case "START_LOAD":
+      return { ...INITIAL_STATE };
     case "HYDRATE":
       return {
         ...state,
@@ -101,11 +114,15 @@ type BudgetContextValue = {
   ui: UIState;
   hydrated: boolean;
   // Actions
-  setPlan: (plan: BudgetPlan) => void;
-  addExpense: (expense: Expense) => void;
-  updateExpense: (expense: Expense) => void;
-  deleteExpense: (id: string) => void;
-  resetAll: () => void;
+  setPlan: (plan: BudgetPlan) => Promise<boolean>;
+  addExpense: (expense: Expense) => Promise<boolean>;
+  updateExpense: (expense: Expense) => Promise<boolean>;
+  deleteExpense: (id: string) => Promise<boolean>;
+  resetAll: () => Promise<boolean>;
+  replaceData: (data: LocalAppDataV1) => Promise<boolean>;
+  localDataPending: boolean;
+  importLocalData: () => Promise<boolean>;
+  dismissLocalDataPrompt: () => void;
   openModal: (modal: UIState["activeModal"], expenseId?: string) => void;
   closeModal: () => void;
 };
@@ -118,40 +135,50 @@ const BudgetContext = createContext<BudgetContextValue | null>(null);
 
 export function BudgetProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(budgetReducer, INITIAL_STATE);
+  const [localDataPending, setLocalDataPending] = useState(false);
+  const { user, loading: authLoading } = useAuth();
+  const currentUserId = useRef<string | null>(null);
 
-  // Hydrate from storage on mount
+  // Load this account's data from Supabase after the session is known.
   useEffect(() => {
-    const result = loadAppData();
-    if (result.ok) {
-      dispatch({ type: "HYDRATE", data: result.data });
-    } else {
-      // Still mark hydrated so UI can show error state
+    if (authLoading) return;
+    let cancelled = false;
+    const userId = user?.id ?? null;
+    currentUserId.current = userId;
+
+    if (!userId) {
+      setLocalDataPending(false);
       dispatch({ type: "HYDRATE", data: { schemaVersion: 1, plan: null, expenses: [], preferences: { language: "ar", currency: "EGP" } } });
-      dispatch({
-        type: "SET_STORAGE_ERROR",
-        error: "storageLoad",
+      return;
+    }
+
+    setLocalDataPending(false);
+    dispatch({ type: "START_LOAD" });
+    loadUserBudget(userId)
+      .then((data) => {
+        if (!cancelled && currentUserId.current === userId) {
+          setLocalDataPending(false);
+          dispatch({ type: "HYDRATE", data: { schemaVersion: 1, ...data, preferences: { language: "ar", currency: "EGP" } } });
+          dispatch({ type: "SET_STORAGE_ERROR", error: null });
+          if (!data.plan && data.expenses.length === 0) {
+            const local = loadAppData();
+            setLocalDataPending(Boolean(local.ok && (local.data.plan || local.data.expenses.length)));
+          } else {
+            setLocalDataPending(false);
+          }
+        }
+      })
+      .catch(() => {
+        if (!cancelled && currentUserId.current === userId) {
+          dispatch({ type: "HYDRATE", data: { schemaVersion: 1, plan: null, expenses: [], preferences: { language: "ar", currency: "EGP" } } });
+          dispatch({ type: "SET_STORAGE_ERROR", error: "تعذر تحميل بياناتك من قاعدة البيانات. تحقق من إعداد Supabase واتصالك." });
+        }
       });
-    }
-  }, []);
 
-  // Persist to storage whenever plan or expenses change (after hydration)
-  useEffect(() => {
-    if (!state.hydrated) return;
-
-    const data: LocalAppDataV1 = {
-      schemaVersion: 1,
-      plan: state.plan,
-      expenses: state.expenses,
-      preferences: { language: "ar", currency: "EGP" }, // will be merged by PreferencesContext
+    return () => {
+      cancelled = true;
     };
-
-    const result = saveAppData(data);
-    if (!result.ok) {
-      dispatch({ type: "SET_STORAGE_ERROR", error: "storageSave" });
-    } else {
-      dispatch({ type: "SET_STORAGE_ERROR", error: null });
-    }
-  }, [state.plan, state.expenses, state.hydrated]);
+  }, [user?.id, authLoading]);
 
   // Derived: budget summary
   const summary = useMemo<BudgetSummary | null>(() => {
@@ -161,25 +188,100 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
 
   // ─── Actions ───────────────────────────────
 
-  const setPlan = useCallback((plan: BudgetPlan) => {
-    dispatch({ type: "SET_PLAN", plan });
-  }, []);
+  const setPlan = useCallback(async (plan: BudgetPlan) => {
+    if (!user || currentUserId.current !== user.id) return false;
+    try {
+      const savedPlan = await saveUserPlan(user.id, plan);
+      dispatch({ type: "SET_PLAN", plan: savedPlan });
+      dispatch({ type: "SET_STORAGE_ERROR", error: null });
+      return true;
+    } catch {
+      dispatch({ type: "SET_STORAGE_ERROR", error: "تعذر حفظ الخطة في قاعدة البيانات." });
+      return false;
+    }
+  }, [user]);
 
-  const addExpense = useCallback((expense: Expense) => {
-    dispatch({ type: "ADD_EXPENSE", expense });
-  }, []);
+  const addExpense = useCallback(async (expense: Expense) => {
+    if (!user || currentUserId.current !== user.id) return false;
+    try {
+      await saveUserExpense(user.id, expense, state.plan?.id ?? null);
+      dispatch({ type: "ADD_EXPENSE", expense });
+      dispatch({ type: "SET_STORAGE_ERROR", error: null });
+      return true;
+    } catch {
+      dispatch({ type: "SET_STORAGE_ERROR", error: "تعذر حفظ المصروف في قاعدة البيانات." });
+      return false;
+    }
+  }, [user, state.plan?.id]);
 
-  const updateExpense = useCallback((expense: Expense) => {
-    dispatch({ type: "UPDATE_EXPENSE", expense });
-  }, []);
+  const updateExpense = useCallback(async (expense: Expense) => {
+    if (!user || currentUserId.current !== user.id) return false;
+    try {
+      await saveUserExpense(user.id, expense, state.plan?.id ?? null);
+      dispatch({ type: "UPDATE_EXPENSE", expense });
+      dispatch({ type: "SET_STORAGE_ERROR", error: null });
+      return true;
+    } catch {
+      dispatch({ type: "SET_STORAGE_ERROR", error: "تعذر تحديث المصروف في قاعدة البيانات." });
+      return false;
+    }
+  }, [user, state.plan?.id]);
 
-  const deleteExpense = useCallback((id: string) => {
-    dispatch({ type: "DELETE_EXPENSE", id });
-  }, []);
+  const deleteExpense = useCallback(async (id: string) => {
+    if (!user || currentUserId.current !== user.id) return false;
+    try {
+      await deleteUserExpense(user.id, id);
+      dispatch({ type: "DELETE_EXPENSE", id });
+      dispatch({ type: "SET_STORAGE_ERROR", error: null });
+      return true;
+    } catch {
+      dispatch({ type: "SET_STORAGE_ERROR", error: "تعذر حذف المصروف من قاعدة البيانات." });
+      return false;
+    }
+  }, [user]);
 
-  const resetAll = useCallback(() => {
-    dispatch({ type: "RESET_ALL" });
-  }, []);
+  const resetAll = useCallback(async () => {
+    if (!user || currentUserId.current !== user.id) return false;
+    try {
+      await clearUserBudget(user.id);
+      dispatch({ type: "RESET_ALL" });
+      dispatch({ type: "SET_STORAGE_ERROR", error: null });
+      return true;
+    } catch {
+      dispatch({ type: "SET_STORAGE_ERROR", error: "تعذر حذف بيانات الميزانية من قاعدة البيانات." });
+      return false;
+    }
+  }, [user]);
+
+  const replaceData = useCallback(async (data: LocalAppDataV1) => {
+    if (!user || currentUserId.current !== user.id) return false;
+    try {
+      const savedData = await replaceUserData(user.id, data);
+      dispatch({ type: "HYDRATE", data: savedData });
+      dispatch({ type: "SET_STORAGE_ERROR", error: null });
+      return true;
+    } catch {
+      dispatch({ type: "SET_STORAGE_ERROR", error: "تعذر استيراد النسخة الاحتياطية إلى قاعدة البيانات." });
+      return false;
+    }
+  }, [user]);
+
+  const importLocalData = useCallback(async () => {
+    if (!user || currentUserId.current !== user.id) return false;
+    const local = loadAppData();
+    if (!local.ok || (!local.data.plan && local.data.expenses.length === 0)) return false;
+    try {
+      const savedData = await replaceUserData(user.id, local.data);
+      dispatch({ type: "HYDRATE", data: savedData });
+      clearAppData();
+      setLocalDataPending(false);
+      dispatch({ type: "SET_STORAGE_ERROR", error: null });
+      return true;
+    } catch {
+      dispatch({ type: "SET_STORAGE_ERROR", error: "تعذر نقل بيانات هذا الجهاز إلى حسابك." });
+      return false;
+    }
+  }, [user]);
 
   const openModal = useCallback(
     (modal: UIState["activeModal"], expenseId?: string) => {
@@ -208,11 +310,19 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
         updateExpense,
         deleteExpense,
         resetAll,
+        replaceData,
+        localDataPending,
+        importLocalData,
+        dismissLocalDataPrompt: () => setLocalDataPending(false),
         openModal,
         closeModal,
       }}
     >
-      {children}
+      {state.hydrated ? children : (
+        <div className="min-h-[60vh] flex items-center justify-center text-sm text-slate-400" role="status">
+          جاري تحميل بيانات حسابك…
+        </div>
+      )}
     </BudgetContext.Provider>
   );
 }

@@ -8,6 +8,8 @@
 **Working name:** Budget Survival Calculator  
 **Suggested Arabic name:** ميزانيتي تكفّي؟
 
+> **Implementation decision (2026-10-14):** The original local-only/no-account MVP proposal below has been superseded for the current application. The app now requires an account (Google or email/password) and stores budget plans, expenses, and preferences in Supabase with per-user Row Level Security. See [`supabase/SETUP.md`](supabase/SETUP.md) for the active setup and deployment requirements.
+
 ---
 
 ## 1. Product Summary

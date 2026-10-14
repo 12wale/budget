@@ -171,7 +171,7 @@ export function Sidebar() {
         ) : (
           <div className="flex items-center gap-2 mb-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[11px] font-bold text-slate-700">تخزين محلي آمن</span>
+            <span className="text-[11px] font-bold text-slate-700">حفظ سحابي خاص بالحساب</span>
           </div>
         )}
       </div>
@@ -229,15 +229,29 @@ export function BottomNav() {
 // ─────────────────────────────────────────────
 
 export function StorageErrorBanner() {
-  const { ui } = useBudget();
+  const { ui, localDataPending, importLocalData, dismissLocalDataPrompt } = useBudget();
   const { t } = usePreferences();
+
+  if (localDataPending) {
+    return (
+      <div role="status" className="fixed top-14 md:top-5 inset-x-3 sm:inset-x-4 z-50 mx-auto max-w-lg rounded-2xl border border-indigo-200 bg-white p-4 shadow-elevated">
+        <p className="text-sm font-bold text-slate-900">وجدنا بيانات محفوظة على هذا الجهاز</p>
+        <p className="mt-1 text-xs leading-5 text-slate-600">هل تريد نقل خطتك ومصروفاتك إلى حسابك؟ لن تُحذف النسخة المحلية إلا بعد نجاح النقل.</p>
+        <div className="mt-3 flex justify-end gap-2">
+          <button type="button" onClick={dismissLocalDataPrompt} className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-100">لاحقًا</button>
+          <button type="button" onClick={async () => { if (await importLocalData()) window.location.reload(); }} className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-700">نقل إلى حسابي</button>
+        </div>
+      </div>
+    );
+  }
 
   if (!ui.storageError) return null;
 
-  const message =
-    ui.storageError === "storageSave"
-      ? t("errors.storageSave")
-      : t("errors.storageLoad");
+  const message = ui.storageError === "storageSave"
+    ? t("errors.storageSave")
+    : ui.storageError === "storageLoad"
+      ? t("errors.storageLoad")
+      : ui.storageError;
 
   return (
     <div

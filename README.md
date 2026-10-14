@@ -1,7 +1,7 @@
 # ميزانيتي تكفّي؟ (Budget Survival Calculator)
 
 أداة تخطيط مالي تفاعلية وبسيطة تجيب على السؤال الأهم: **«ميزانيتي هتكفيني لحد إمتى؟»**
-A simple, private, local-first budget runway calculator built with Next.js 16 App Router, Tailwind CSS, and TypeScript.
+A private budget runway calculator built with Next.js 16 App Router, Tailwind CSS, TypeScript, and Supabase.
 
 ---
 
@@ -27,8 +27,9 @@ A simple, private, local-first budget runway calculator built with Next.js 16 Ap
    - حساب الفارق بالأيام، وتاريخ نفاد الميزانية، والرصيد المتوقع عند نهاية الخطة.
    - زر لتطبيق الخطة المقترحة مباشرة بضغطة زر.
 
-4. **الخصوصية والتخزين المحلي (Local-First & Private)**:
-   - 100% بدون خوادم خارجية — بياناتك في متصفحك فقط عبر `localStorage` بنسخة رقمية مدققة بـ Zod.
+4. **الحسابات والتخزين السحابي الخاص (Accounts & Private Cloud Storage)**:
+   - تسجيل الدخول باستخدام Google أو البريد الإلكتروني وكلمة المرور.
+   - حفظ الخطط والمصروفات والتفضيلات في Supabase مع Row Level Security لكل مستخدم.
    - تصدير المصروفات بصيغة Excel/CSV.
    - تصدير واسترجاع نسخة احتياطية كاملة بصيغة JSON.
    - حذف آمن وكامل للبيانات.
@@ -45,6 +46,8 @@ A simple, private, local-first budget runway calculator built with Next.js 16 Ap
 # تثبيت الحزم
 npm install
 
+# إعداد Supabase وفق supabase/SETUP.md ونسخ .env.example إلى .env.local
+
 # تشغيل خادم التطوير
 npm run dev
 
@@ -57,6 +60,8 @@ npm test
 
 افتح المتصفح على: [http://localhost:3000](http://localhost:3000)
 
+قبل التشغيل، شغّل [`supabase/schema.sql`](supabase/schema.sql) في SQL Editor داخل مشروع Supabase، وأضف بيانات المشروع إلى `.env.local`.
+
 ---
 
 ## 📁 الهيكلية البرمجية (Architecture)
@@ -67,11 +72,12 @@ npm test
   - `(app)/simulator/` — محاكي السيناريوهات اليومية.
   - `(app)/settings/` — تفضيلات اللغة، العملة، التصدير، والاستعادة.
 - `components/` — مكونات واجهة المستخدم (Buttons, Cards, Inputs, Modals, Badges, Charts).
-- `context/` — مزودات الحالة العامة (`BudgetContext`, `PreferencesContext`).
+- `context/` — مزودات الحالة والحسابات (`BudgetContext`, `PreferencesContext`, `AuthContext`).
 - `lib/` — المكتبات الحسابية والمنطقية المنعزلة:
   - `budget.calculations.ts` — خوارزميات الحسابات، الأيام المتبقية، وسيناريوهات المحاكاة.
   - `currency.ts` — تحويل العملات بالوحدات الصغرى (piastres/cents) والتنسيق.
   - `date.ts` — دوال حساب وتفاضل الأيام التقويمية الآمنة من التوقيت الصيفي.
-  - `storage.ts` — التخزين المحلي الآمن والمفحوص بواسطة Zod.
+  - `storage.ts` — تصدير CSV والنسخ الاحتياطية JSON واستيراد البيانات المحلية القديمة.
+  - `supabase/` — عملاء Supabase وطبقة مستودع البيانات.
   - `i18n.ts` — القواميس والمترجم ثنائي اللغة.
 - `tests/` — اختبارات الوحدة باستخدام Vitest و Testing Library.
