@@ -11,6 +11,8 @@ import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { getCategoryById } from "@/lib/categories";
 import { formatDate } from "@/lib/date";
 import type { Expense } from "@/types/budget.types";
+import { CategoryIcon } from "@/components/ui/CategoryIcon";
+import { FiEdit2, FiFileText, FiPlus, FiTag, FiTrash2 } from "react-icons/fi";
 
 export default function ExpensesPage() {
   const { expenses, deleteExpense, plan } = useBudget();
@@ -35,7 +37,7 @@ export default function ExpensesPage() {
             سجل وتتبع جميع مصاريفك اليومية بدقة وسهولة.
           </p>
         </div>
-        <Button size="md" icon="➕" className="w-full sm:w-auto" onClick={() => setAddOpen(true)}>
+        <Button size="md" icon={<FiPlus />} className="w-full sm:w-auto" onClick={() => setAddOpen(true)}>
           {t("expenses.addExpense")}
         </Button>
       </div>
@@ -52,7 +54,7 @@ export default function ExpensesPage() {
                 </p>
               </div>
               <div className="w-11 h-11 rounded-2xl bg-indigo-100/80 text-indigo-600 flex items-center justify-center text-xl shadow-xs">
-                💸
+                <FiTag className="h-5 w-5" aria-hidden="true" />
               </div>
             </CardBody>
           </Card>
@@ -66,7 +68,7 @@ export default function ExpensesPage() {
                 </p>
               </div>
               <div className="w-11 h-11 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center text-xl shadow-xs">
-                📝
+                <FiFileText className="h-5 w-5" aria-hidden="true" />
               </div>
             </CardBody>
           </Card>
@@ -77,11 +79,11 @@ export default function ExpensesPage() {
       {sorted.length === 0 ? (
         <Card className="shadow-xs">
           <EmptyState
-            icon="🧾"
+            icon={<FiFileText />}
             title={t("expenses.empty")}
             description={t("expenses.emptySubtext")}
             action={
-              <Button onClick={() => setAddOpen(true)} icon="➕">
+              <Button onClick={() => setAddOpen(true)} icon={<FiPlus />}>
                 {t("expenses.addExpense")}
               </Button>
             }
@@ -102,8 +104,8 @@ export default function ExpensesPage() {
                   key={expense.id}
                   className="flex items-center gap-2.5 sm:gap-3.5 px-3.5 sm:px-6 py-3 sm:py-4 hover:bg-slate-50/70 transition-colors group"
                 >
-                  <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-slate-100 border border-slate-200/60 flex items-center justify-center text-xl sm:text-2xl shrink-0 shadow-xs group-hover:scale-105 transition-transform">
-                    {category?.icon ?? "📦"}
+                  <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-slate-100 border border-slate-200/60 flex items-center justify-center text-slate-600 shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+                    <CategoryIcon categoryId={category?.id ?? "other"} className="h-5 w-5" />
                   </div>
 
                   <div className="flex-1 min-w-0">
@@ -136,14 +138,14 @@ export default function ExpensesPage() {
                         className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-indigo-50 hover:text-indigo-600 transition-colors text-sm text-slate-400"
                         aria-label={`${t("expenses.editExpense")}: ${formatAmount(expense.amountMinor)}`}
                       >
-                        ✏️
+                        <FiEdit2 className="h-4 w-4" aria-hidden="true" />
                       </button>
                       <button
                         onClick={() => setDeleteTarget(expense)}
                         className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-rose-50 hover:text-rose-600 transition-colors text-sm text-slate-400"
                         aria-label={`${t("expenses.deleteExpense")}: ${formatAmount(expense.amountMinor)}`}
                       >
-                        🗑️
+                        <FiTrash2 className="h-4 w-4" aria-hidden="true" />
                       </button>
                     </div>
                   </div>

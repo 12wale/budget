@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
+import type { IconType } from "react-icons";
+import { FiCreditCard, FiHome, FiLogOut, FiSettings, FiSliders } from "react-icons/fi";
 import { usePathname, useRouter } from "next/navigation";
 import { usePreferences } from "@/context/PreferencesContext";
 import { useBudget } from "@/context/BudgetContext";
@@ -9,14 +12,14 @@ import { useAuth } from "@/context/AuthContext";
 type NavItem = {
   href: string;
   labelKey: string;
-  icon: string;
+  icon: IconType;
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/overview",   labelKey: "nav.overview",   icon: "🏠" },
-  { href: "/expenses",   labelKey: "nav.expenses",   icon: "💳" },
-  { href: "/simulator",  labelKey: "nav.simulator",  icon: "🔮" },
-  { href: "/settings",   labelKey: "nav.settings",   icon: "⚙️" },
+  { href: "/overview",   labelKey: "nav.overview",   icon: FiHome },
+  { href: "/expenses",   labelKey: "nav.expenses",   icon: FiCreditCard },
+  { href: "/simulator",  labelKey: "nav.simulator",  icon: FiSliders },
+  { href: "/settings",   labelKey: "nav.settings",   icon: FiSettings },
 ];
 
 // ─────────────────────────────────────────────
@@ -30,9 +33,14 @@ export function MobileTopBar() {
   return (
     <header className="md:hidden sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 py-2.5 flex items-center justify-between shadow-2xs">
       <Link href="/overview" className="flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-base bg-gradient-to-tr from-indigo-600 to-cyan-400 text-white shadow-xs">
-          💰
-        </div>
+        <Image
+          src="/brand-logo.jpg"
+          alt="جيبك"
+          width={96}
+          height={54}
+          className="h-12 w-12 rounded-lg object-contain"
+          priority
+        />
         <span className="font-bold text-sm text-slate-900 tracking-tight">
           {t("appName")}
         </span>
@@ -81,20 +89,20 @@ export function Sidebar() {
       <div className="px-6 py-6 border-b border-[var(--color-border-subtle)]">
         <Link href="/overview" className="block group focus-visible:outline-none">
           <div className="flex items-center gap-3.5">
-            <div
-              className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 shadow-md shadow-indigo-500/25 transition-transform duration-300 group-hover:scale-105"
-            >
-              💰
-            </div>
+            <Image
+              src="/brand-logo.jpg"
+              alt=""
+              width={80}
+              height={80}
+              className="h-20 w-20 shrink-0 rounded-xl object-contain transition-transform duration-300 group-hover:scale-105"
+              priority
+            />
             <div>
               <p
                 className="font-bold text-base leading-tight text-slate-900 group-hover:text-indigo-600 transition-colors"
               >
                 {t("appName")}
               </p>
-              <span className="text-[11px] font-medium text-slate-400">
-                حاسبة الأمان المالي
-              </span>
             </div>
           </div>
         </Link>
@@ -125,14 +133,12 @@ export function Sidebar() {
                   aria-hidden="true"
                 />
               )}
-              <span
-                className={`text-lg transition-transform duration-200 group-hover:scale-110 ${
+              <item.icon
+                className={`h-5 w-5 transition-transform duration-200 group-hover:scale-110 ${
                   isActive ? "scale-105" : "opacity-80"
                 }`}
                 aria-hidden="true"
-              >
-                {item.icon}
-              </span>
+              />
               <span>{t(item.labelKey)}</span>
             </Link>
           );
@@ -162,16 +168,16 @@ export function Sidebar() {
               type="button"
               onClick={handleSignOut}
               title="تسجيل الخروج"
-              className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors text-sm"
+              className="shrink-0 w-10 h-10 rounded-xl border border-red-200 bg-white flex items-center justify-center text-red-600 hover:bg-red-50 hover:border-red-300 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 transition-colors"
               aria-label="تسجيل الخروج"
             >
-              ⏻
+              <FiLogOut className="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
         ) : (
           <div className="flex items-center gap-2 mb-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[11px] font-bold text-slate-700">حفظ سحابي خاص بالحساب</span>
+            <span className="text-[11px] font-bold text-slate-700">حسابك جاهز لحفظ بياناتك</span>
           </div>
         )}
       </div>
@@ -212,7 +218,7 @@ export function BottomNav() {
                 isActive ? "bg-indigo-50 scale-105 shadow-2xs" : ""
               }`}
             >
-              <span className="text-lg leading-none" aria-hidden="true">{item.icon}</span>
+              <item.icon className="h-5 w-5" aria-hidden="true" />
             </div>
             <span className="text-[10px] leading-tight mt-0.5 truncate max-w-full">
               {t(item.labelKey)}

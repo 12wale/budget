@@ -139,7 +139,7 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
   const { user, loading: authLoading } = useAuth();
   const currentUserId = useRef<string | null>(null);
 
-  // Load this account's data from Supabase after the session is known.
+  // Load this account's data after the session is known.
   useEffect(() => {
     if (authLoading) return;
     let cancelled = false;
@@ -171,7 +171,7 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
       .catch(() => {
         if (!cancelled && currentUserId.current === userId) {
           dispatch({ type: "HYDRATE", data: { schemaVersion: 1, plan: null, expenses: [], preferences: { language: "ar", currency: "EGP" } } });
-          dispatch({ type: "SET_STORAGE_ERROR", error: "تعذر تحميل بياناتك من قاعدة البيانات. تحقق من إعداد Supabase واتصالك." });
+          dispatch({ type: "SET_STORAGE_ERROR", error: "تعذر تحميل بياناتك. تحقق من اتصالك ثم حاول مرة أخرى." });
         }
       });
 
@@ -196,7 +196,7 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "SET_STORAGE_ERROR", error: null });
       return true;
     } catch {
-      dispatch({ type: "SET_STORAGE_ERROR", error: "تعذر حفظ الخطة في قاعدة البيانات." });
+      dispatch({ type: "SET_STORAGE_ERROR", error: "تعذر حفظ الخطة. حاول مرة أخرى." });
       return false;
     }
   }, [user]);
@@ -209,7 +209,7 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "SET_STORAGE_ERROR", error: null });
       return true;
     } catch {
-      dispatch({ type: "SET_STORAGE_ERROR", error: "تعذر حفظ المصروف في قاعدة البيانات." });
+      dispatch({ type: "SET_STORAGE_ERROR", error: "تعذر حفظ المصروف. حاول مرة أخرى." });
       return false;
     }
   }, [user, state.plan?.id]);
@@ -222,7 +222,7 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "SET_STORAGE_ERROR", error: null });
       return true;
     } catch {
-      dispatch({ type: "SET_STORAGE_ERROR", error: "تعذر تحديث المصروف في قاعدة البيانات." });
+      dispatch({ type: "SET_STORAGE_ERROR", error: "تعذر تحديث المصروف. حاول مرة أخرى." });
       return false;
     }
   }, [user, state.plan?.id]);
@@ -235,7 +235,7 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "SET_STORAGE_ERROR", error: null });
       return true;
     } catch {
-      dispatch({ type: "SET_STORAGE_ERROR", error: "تعذر حذف المصروف من قاعدة البيانات." });
+      dispatch({ type: "SET_STORAGE_ERROR", error: "تعذر حذف المصروف. حاول مرة أخرى." });
       return false;
     }
   }, [user]);
@@ -248,7 +248,7 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "SET_STORAGE_ERROR", error: null });
       return true;
     } catch {
-      dispatch({ type: "SET_STORAGE_ERROR", error: "تعذر حذف بيانات الميزانية من قاعدة البيانات." });
+      dispatch({ type: "SET_STORAGE_ERROR", error: "تعذر حذف بيانات الميزانية. حاول مرة أخرى." });
       return false;
     }
   }, [user]);
@@ -261,7 +261,7 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "SET_STORAGE_ERROR", error: null });
       return true;
     } catch {
-      dispatch({ type: "SET_STORAGE_ERROR", error: "تعذر استيراد النسخة الاحتياطية إلى قاعدة البيانات." });
+      dispatch({ type: "SET_STORAGE_ERROR", error: "تعذر استعادة النسخة. تحقق من الملف وحاول مرة أخرى." });
       return false;
     }
   }, [user]);
@@ -320,7 +320,7 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
     >
       {state.hydrated ? children : (
         <div className="min-h-[60vh] flex items-center justify-center text-sm text-slate-400" role="status">
-          جاري تحميل بيانات حسابك…
+          جاري تحميل بياناتك…
         </div>
       )}
     </BudgetContext.Provider>

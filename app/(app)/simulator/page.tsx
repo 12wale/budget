@@ -12,6 +12,7 @@ import { Modal } from "@/components/ui/Modal";
 import { simulateScenario } from "@/lib/budget.calculations";
 import { formatNumber } from "@/lib/currency";
 import { formatDate } from "@/lib/date";
+import { FiCheck, FiRefreshCw, FiSliders, FiX } from "react-icons/fi";
 
 export default function SimulatorPage() {
   const { plan, expenses, summary, setPlan } = useBudget();
@@ -36,7 +37,7 @@ export default function SimulatorPage() {
     return (
       <Card className="max-w-md mx-auto">
         <EmptyState
-          icon="🔮"
+          icon={<FiSliders />}
           title={t("simulator.noPlan")}
           description={t("setup.subheadline")}
           action={
@@ -103,14 +104,14 @@ export default function SimulatorPage() {
           className="p-4 rounded-2xl text-sm font-semibold animate-slide-up flex items-center justify-between bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-xs"
         >
           <div className="flex items-center gap-2">
-            <span className="text-lg">✓</span>
+            <FiCheck className="h-4 w-4" aria-hidden="true" />
             <span>تم تطبيق الإنفاق اليومي الجديد في خطتك بنجاح!</span>
           </div>
           <button
             onClick={() => setHasApplied(false)}
             className="text-xs font-bold text-emerald-700 hover:text-emerald-900 px-2 py-1"
           >
-            ✕
+            <FiX className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
       )}
@@ -120,7 +121,7 @@ export default function SimulatorPage() {
         <CardHeader>
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2">
-              <span className="text-xl">🎛️</span>
+              <FiSliders className="h-5 w-5 text-slate-500" aria-hidden="true" />
               <h2 className="text-base sm:text-lg font-bold text-slate-900">
                 {t("simulator.scenario")}
               </h2>
@@ -128,7 +129,7 @@ export default function SimulatorPage() {
             <Button
               variant="ghost"
               size="sm"
-              icon="🔄"
+              icon={<FiRefreshCw />}
               onClick={() => {
                 setAdjustedMinor(baselineMinor);
                 setHasApplied(false);

@@ -3,6 +3,7 @@
 import {
   AreaChart,
   Area,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -15,6 +16,7 @@ import type { BudgetPlan, BudgetSummary } from "@/types/budget.types";
 import { buildForecastDataPoints } from "@/lib/budget.calculations";
 import { formatDate, todayISO } from "@/lib/date";
 import { usePreferences } from "@/context/PreferencesContext";
+import { FiBarChart2, FiChevronDown } from "react-icons/fi";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { formatMinor } from "@/lib/currency";
 
@@ -28,6 +30,8 @@ type ChartPoint = {
   rawDate: string;
   balance: number;
   balanceMinor: number;
+  actualBalance: number | null;
+  projectedBalance: number | null;
   isProjected: boolean;
 };
 
@@ -66,7 +70,9 @@ function CustomTooltip({
       </div>
 
       <div className="space-y-1">
-        <p className="text-[11px] text-slate-500 font-medium">الرصيد التقديري</p>
+        <p className="text-[11px] text-slate-500 font-medium">
+          {isToday ? "رصيد اليوم" : data.isProjected ? "الرصيد المتوقع" : "الرصيد المسجّل"}
+        </p>
         <p className="text-base font-extrabold text-indigo-600 tabular-nums">
           {formatMinor(data.balanceMinor, currency, locale)}
         </p>
@@ -100,17 +106,21 @@ export function RunwayChart({ plan, summary }: Props) {
       rawDate: p.date,
       balance: p.balanceMinor / 100,
       balanceMinor: p.balanceMinor,
+      actualBalance: p.isProjected ? null : p.balanceMinor / 100,
+      projectedBalance: p.isProjected || p.date === today ? p.balanceMinor / 100 : null,
       isProjected: p.isProjected,
     }));
-  }, [dataPoints, locale]);
+  }, [dataPoints, locale, today]);
 
   const forecastLabel =
     summary.forecastMode === "actual"
       ? t("overview.forecastActual")
       : t("overview.forecastPlanned");
 
-  // Calculate final balance on target date
-  const finalPoint = chartData[chartData.length - 1];
+  const endBalanceMinor = Math.max(
+    0,
+    summary.remainingBalanceMinor - summary.spendingBaselineMinor * summary.remainingDays
+  );
 
   if (summary.remainingDays <= 0 && summary.remainingBalanceMinor <= 0) {
     return null;
@@ -124,51 +134,59 @@ export function RunwayChart({ plan, summary }: Props) {
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-pulse" />
               <h2 className="text-base sm:text-lg font-bold text-slate-900">
-                {t("overview.estimatedRunway")}
+                كيف سيتغير رصيدك؟
               </h2>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              {t("overview.forecastBased")}{" "}
+              التوقع مبني على{" "}
               <span className="font-semibold text-indigo-600">{forecastLabel}</span>
             </p>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs px-2.5 py-1 rounded-xl bg-indigo-50 text-indigo-700 font-bold border border-indigo-100/80">
-              {formatAmount(summary.spendingBaselineMinor)} / يوم
-            </span>
-            <span className="text-xs px-2.5 py-1 rounded-xl bg-slate-100 text-slate-600 font-medium">
-              توقع تنازلي
-            </span>
-          </div>
+          <p className="text-xs text-slate-500 leading-5 max-w-xs">
+            الخط المتصل يوضح رصيدك حتى اليوم، والمتقطع يوضح ما قد يتبقى حتى نهاية الخطة.
+          </p>
         </div>
       </CardHeader>
 
       <CardBody className="p-3 sm:p-6 space-y-4">
-        {/* Quick Micro-Stats Bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
-          <div>
-            <span className="text-[11px] text-slate-400 font-medium block">رصيد اليوم</span>
-            <span className="font-bold text-slate-800 tabular-nums">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5 text-xs">
+          <span className="inline-flex items-center gap-2 text-slate-600">
+            <span className="h-0.5 w-5 bg-indigo-600" aria-hidden="true" />
+            رصيدك حتى اليوم
+          </span>
+          <span className="inline-flex items-center gap-2 text-slate-600">
+            <span className="w-5 border-t-2 border-dashed border-teal-700" aria-hidden="true" />
+            التوقع
+          </span>
+          <span className="ms-auto text-slate-500">
+            الإنفاق اليومي: <strong className="font-semibold text-slate-700">{formatAmount(summary.spendingBaselineMinor)}</strong>
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="rounded-xl border border-slate-100 p-3">
+            <span className="block text-[11px] text-slate-400">الرصيد الآن</span>
+            <strong className="mt-1 block text-sm text-slate-800 tabular-nums">
               {formatAmount(summary.remainingBalanceMinor)}
-            </span>
+            </strong>
           </div>
-          <div>
-            <span className="text-[11px] text-slate-400 font-medium block">المتوقع بنهاية الخطة</span>
-            <span className="font-bold text-slate-800 tabular-nums">
-              {finalPoint ? formatAmount(finalPoint.balanceMinor) : "—"}
-            </span>
-          </div>
-          <div className="col-span-2 sm:col-span-1 border-t sm:border-t-0 pt-1.5 sm:pt-0 border-slate-200/60">
-            <span className="text-[11px] text-slate-400 font-medium block">موعد النفاد التقديري</span>
-            <span className="font-bold text-indigo-600 tabular-nums">
-              {summary.estimatedExhaustionDate ? formatDate(summary.estimatedExhaustionDate, locale) : "لن ينفد"}
-            </span>
+          <div className="rounded-xl border border-slate-100 p-3">
+            <span className="block text-[11px] text-slate-400">المتوقع بنهاية الخطة</span>
+            <strong className="mt-1 block text-sm text-slate-800 tabular-nums">
+              {formatAmount(endBalanceMinor)}
+            </strong>
           </div>
         </div>
 
         {/* Chart Container */}
-        <div className="h-56 sm:h-64 md:h-72 w-full relative" aria-hidden="true">
+        <div
+          className="h-56 sm:h-64 md:h-72 w-full relative"
+          role="img"
+          aria-label={preferences.language === "ar"
+            ? "رسم يوضح رصيدك حتى اليوم والتوقع حتى نهاية الخطة"
+            : "Chart showing your balance to date and projected balance through the plan end"}
+        >
           {!mounted ? (
             <div className="w-full h-full flex items-center justify-center bg-slate-50/50 rounded-xl animate-pulse text-xs text-slate-400">
               جاري تحميل الرسم البياني…
@@ -243,15 +261,33 @@ export function RunwayChart({ plan, summary }: Props) {
                 <Area
                   dataKey="balance"
                   type="monotone"
+                  stroke="transparent"
+                  fill="url(#balanceAreaGradient)"
+                  tooltipType="none"
+                  activeDot={false}
+                />
+
+                <Line
+                  dataKey="actualBalance"
+                  type="monotone"
                   stroke="#4F46E5"
                   strokeWidth={2.5}
-                  fill="url(#balanceAreaGradient)"
-                  activeDot={{
-                    r: 5,
-                    fill: "#4F46E5",
-                    stroke: "#FFFFFF",
-                    strokeWidth: 2,
-                  }}
+                  connectNulls={false}
+                  dot={false}
+                  activeDot={{ r: 4, fill: "#4F46E5", stroke: "#fff", strokeWidth: 2 }}
+                  name="الرصيد حتى اليوم"
+                />
+
+                <Line
+                  dataKey="projectedBalance"
+                  type="monotone"
+                  stroke="#0F766E"
+                  strokeWidth={2.5}
+                  strokeDasharray="6 5"
+                  connectNulls={false}
+                  dot={false}
+                  activeDot={{ r: 4, fill: "#0F766E", stroke: "#fff", strokeWidth: 2 }}
+                  name="التوقع"
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -263,11 +299,11 @@ export function RunwayChart({ plan, summary }: Props) {
           <summary className="text-xs font-semibold cursor-pointer text-slate-500 hover:text-indigo-600 transition-colors list-none flex items-center justify-between py-1">
             <span>
               {preferences.language === "ar"
-                ? "📊 عرض تفاصيل التوقعات كجدول"
-                : "📊 View forecast data as table"}
+                ? <><FiBarChart2 className="me-1 inline h-4 w-4 align-[-3px]" aria-hidden="true" />عرض تفاصيل التوقعات كجدول</>
+                : <><FiBarChart2 className="me-1 inline h-4 w-4 align-[-3px]" aria-hidden="true" />View forecast data as table</>}
             </span>
             <span className="text-slate-400 group-open:rotate-180 transition-transform">
-              ▼
+              <FiChevronDown className="h-4 w-4" aria-hidden="true" />
             </span>
           </summary>
           <div className="overflow-x-auto mt-2.5">

@@ -1,6 +1,7 @@
 "use client";
 
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { FiLoader } from "react-icons/fi";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger" | "success";
 type Size = "sm" | "md" | "lg";
@@ -58,9 +59,9 @@ export function Button({
       {...props}
     >
       {loading ? (
-        <span className="animate-spin text-base" aria-hidden="true">⏳</span>
+        <FiLoader className="h-4 w-4 animate-spin" aria-hidden="true" />
       ) : icon ? (
-        <span className="text-base leading-none" aria-hidden="true">{icon}</span>
+        <span className="inline-flex items-center text-base leading-none" aria-hidden="true">{icon}</span>
       ) : null}
       <span>{children}</span>
     </button>

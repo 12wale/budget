@@ -7,7 +7,7 @@ import type { Language } from "@/types/budget.types";
 
 export const strings = {
   ar: {
-    appName: "ميزانيتي تكفّي؟",
+    appName: "أمّن جيبك",
     tagline: "اعرف ميزانيتك هتكفيك لحد إمتى",
 
     nav: {
@@ -21,7 +21,7 @@ export const strings = {
       headline: "اعرف ميزانيتك هتكفيك لحد إمتى",
       subheadline: "ابني خطة بسيطة من رصيدك المتاح، ومصاريفك الثابتة، وإنفاقك اليومي.",
       cta: "احسب ميزانيتي",
-      privacy: "بيانات ميزانيتك محفوظة في قاعدة بيانات حسابك الخاصة.",
+      privacy: "تُحفظ بيانات ميزانيتك بأمان في حسابك.",
       fields: {
         startingBalance: "إجمالي المبلغ المتاح",
         currency: "العملة",
@@ -115,11 +115,11 @@ export const strings = {
       currency: "العملة",
       language: "اللغة",
       privacy: "الخصوصية",
-      privacyText: "تُحفظ بياناتك في قاعدة بيانات حسابك على Supabase، وتُحمى سياسات قاعدة البيانات من وصول الحسابات الأخرى إليها.",
+      privacyText: "بياناتك خاصة بحسابك، ويمكنك حذفها من الإعدادات في أي وقت.",
       exportData: "تصدير البيانات (CSV)",
       resetAll: "حذف كل البيانات",
       resetConfirm: "هل أنت متأكد؟ سيتم حذف خطتك ومصاريفك. لا يمكن التراجع.",
-      resetWarning: "فكّر في تصدير بياناتك قبل الحذف.",
+      resetWarning: "تصدير المصروفات متاح قبل حذف البيانات.",
       appVersion: "إصدار التطبيق",
     },
 
@@ -270,11 +270,11 @@ export const strings = {
       currency: "Currency",
       language: "Language",
       privacy: "Privacy",
-      privacyText: "Your data is stored in your Supabase account database. Row-level security policies prevent other accounts from accessing it.",
+      privacyText: "Your data is private to your account, and you can delete it from settings at any time.",
       exportData: "Export data (CSV)",
       resetAll: "Delete all data",
       resetConfirm: "Are you sure? Your plan and expenses will be permanently deleted. This cannot be undone.",
-      resetWarning: "Consider exporting your data before resetting.",
+      resetWarning: "You can export your expenses before deleting your data.",
       appVersion: "App version",
     },
 

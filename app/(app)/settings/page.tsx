@@ -12,11 +12,10 @@ import { SUPPORTED_CURRENCIES } from "@/lib/currency";
 import {
   exportExpensesCSV,
   downloadCSV,
-  exportBackupJSON,
-  downloadJSON,
   validateBackupJSON,
 } from "@/lib/storage";
 import type { Language, LocalAppDataV1 } from "@/types/budget.types";
+import { FiDownload, FiFolder, FiLock, FiTrash2 } from "react-icons/fi";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -49,18 +48,6 @@ export default function SettingsPage() {
     downloadCSV(csv, `budget-expenses-${dateStr}.csv`);
   }
 
-  function handleExportJSON() {
-    const data: LocalAppDataV1 = {
-      schemaVersion: 1,
-      plan,
-      expenses,
-      preferences,
-    };
-    const json = exportBackupJSON(data);
-    const dateStr = new Date().toISOString().slice(0, 10);
-    downloadJSON(json, `budget-backup-${dateStr}.json`);
-  }
-
   function handleImportFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -76,7 +63,7 @@ export default function SettingsPage() {
 
       const saved = await replaceData(res.data);
       if (!saved) {
-        setImportStatus("تعذر استيراد النسخة الاحتياطية إلى قاعدة البيانات.");
+        setImportStatus("تعذر استعادة النسخة. حاول مرة أخرى.");
         return;
       }
       setPreferences(res.data.preferences);
@@ -134,7 +121,7 @@ export default function SettingsPage() {
       {/* Data Management Card */}
       <Card>
         <CardHeader>
-          <h2 className="text-base font-semibold">إدارة البيانات والنسخ الاحتياطي</h2>
+          <h2 className="text-base font-semibold">إدارة البيانات</h2>
         </CardHeader>
         <CardBody className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--color-border)]">
@@ -145,37 +132,32 @@ export default function SettingsPage() {
               </p>
             </div>
             <Button variant="secondary" size="sm" className="w-full sm:w-auto" onClick={handleExportCSV}>
-              📥 تصدير CSV
+              <FiDownload className="h-4 w-4" aria-hidden="true" /> تصدير CSV
             </Button>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--color-border)]">
             <div>
-              <p className="text-sm font-medium">نسخة احتياطية كاملة (JSON)</p>
+              <p className="text-sm font-medium">استعادة نسخة محفوظة</p>
               <p className="text-xs" style={{ color: "var(--color-muted)" }}>
-                حفظ خطتك ومصاريفك وتفضيلاتك في ملف للرجوع إليه أو نقله لجهاز آخر.
+                اختر ملف نسخة محفوظة لاستعادة خطتك ومصروفاتك.
               </p>
             </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Button variant="secondary" size="sm" className="flex-1 sm:flex-initial" onClick={handleExportJSON}>
-                💾 حفظ نسخة
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                className="flex-1 sm:flex-initial"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                📂 استعادة نسخة
-              </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".json"
-                className="hidden"
-                onChange={handleImportFile}
-              />
-            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="w-full sm:w-auto"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <FiFolder className="h-4 w-4" aria-hidden="true" /> استعادة نسخة
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json"
+              className="hidden"
+              onChange={handleImportFile}
+            />
           </div>
 
           {importStatus && (
@@ -211,7 +193,7 @@ export default function SettingsPage() {
               className="w-full sm:w-auto"
               onClick={() => setIsResetModalOpen(true)}
             >
-              🗑️ {t("settings.resetAll")}
+              <FiTrash2 className="h-4 w-4" aria-hidden="true" /> {t("settings.resetAll")}
             </Button>
           </div>
         </CardBody>
@@ -221,7 +203,7 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <span aria-hidden="true">🔒</span>
+            <FiLock className="h-4 w-4" aria-hidden="true" />
             <h2 className="text-base font-semibold">{t("settings.privacy")}</h2>
           </div>
         </CardHeader>
@@ -229,7 +211,7 @@ export default function SettingsPage() {
           <p>{t("settings.privacyText")}</p>
           <div className="pt-2 border-t border-[var(--color-border)] flex items-center justify-between text-xs">
             <span>{t("settings.appVersion")}: 1.0.0</span>
-              <span>حفظ سحابي خاص بالحساب</span>
+              <span>حفظ آمن لحسابك</span>
           </div>
         </CardBody>
       </Card>
@@ -258,7 +240,7 @@ export default function SettingsPage() {
             ⚠️ {t("settings.resetConfirm")}
           </p>
           <p style={{ color: "var(--color-muted)" }}>
-              سيتم حذف خطتك المالية ومصروفاتك من قاعدة بيانات حسابك.
+              سيتم حذف خطتك المالية ومصروفاتك نهائيًا.
           </p>
         </div>
       </Modal>

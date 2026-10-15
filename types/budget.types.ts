@@ -63,7 +63,7 @@ export type ExpenseCategory = {
   id: string;
   /** i18n key for label */
   labelKey: string;
-  /** Heroicons / emoji identifier */
+  /** Key used to select the category icon */
   icon: string;
   isCustom?: boolean;
 };

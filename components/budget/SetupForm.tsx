@@ -8,6 +8,7 @@ import { usePreferences } from "@/context/PreferencesContext";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
+import { FiLock } from "react-icons/fi";
 import { Card, CardBody } from "@/components/ui/Card";
 import { decimalToMinor } from "@/lib/currency";
 import { todayISO, addDays } from "@/lib/date";
@@ -197,7 +198,8 @@ export function SetupForm({ editMode = false, onSuccess }: SetupFormProps) {
 
       {!editMode && (
         <p className="text-xs text-center" style={{ color: "var(--color-muted)" }}>
-          🔒 {t("setup.privacy")}
+          <FiLock className="me-1 inline h-3.5 w-3.5 align-[-2px]" aria-hidden="true" />
+          {t("setup.privacy")}
         </p>
       )}
     </form>

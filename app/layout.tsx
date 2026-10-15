@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Sans_Arabic } from "next/font/google";
+import { Noto_Sans_Arabic } from "next/font/google";
 import "./globals.css";
 
-const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
+const notoSansArabic = Noto_Sans_Arabic({
   weight: ["400", "500", "600", "700"],
   subsets: ["arabic", "latin"],
   variable: "--font-sans",
@@ -22,9 +22,6 @@ export const metadata: Metadata = {
   title: {
     default: "جيبك",
     template: "%s | جيبك",
-  },
-  icons:{
-    icon:"/logo.jpg"
   },
   description:
     "احسب ميزانيتك وشوف هتكفيك لحد إمتى. خطط لمصروفاتك واحفظ بياناتك في حسابك الخاص.",
@@ -46,7 +43,7 @@ export default function RootLayout({
     <html
       lang="ar"
       dir="rtl"
-      className={ibmPlexSansArabic.variable}
+      className={notoSansArabic.variable}
       suppressHydrationWarning
     >
       <body className="min-h-dvh flex flex-col bg-[var(--color-background)] text-[var(--color-text)] antialiased overflow-x-hidden">

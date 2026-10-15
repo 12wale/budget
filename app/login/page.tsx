@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState, type FormEvent } from "react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -24,10 +25,10 @@ function LoginForm() {
     if (lower.includes("invalid login") || lower.includes("invalid credentials")) return "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
     if (lower.includes("already registered") || lower.includes("already been registered")) return "هذا البريد مسجل بالفعل. جرّب تسجيل الدخول.";
     if (lower.includes("password")) return "كلمة المرور يجب أن تكون 8 أحرف على الأقل.";
-    if (lower.includes("supabase is not configured")) return "إعدادات Supabase غير مكتملة. أضف رابط المشروع ومفتاح anon إلى ملف .env.local.";
-    if (searchParams.get("error") === "config") return "إعدادات Supabase غير مكتملة. أضف رابط المشروع ومفتاح anon إلى ملف .env.local.";
+    if (lower.includes("supabase is not configured")) return "تعذر الاتصال بخدمة الحسابات. حاول مرة أخرى بعد قليل.";
+    if (searchParams.get("error") === "config") return "تعذر الاتصال بخدمة الحسابات. حاول مرة أخرى بعد قليل.";
     if (searchParams.get("error") === "auth") return "تعذر إكمال تسجيل الدخول. حاول مرة أخرى.";
-    return "تعذر إتمام العملية. تحقق من اتصالك وإعدادات Supabase ثم حاول مرة أخرى.";
+    return "تعذر إتمام العملية. تحقق من اتصالك ثم حاول مرة أخرى.";
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -93,7 +94,14 @@ function LoginForm() {
     <div className="min-h-dvh flex items-center justify-center px-4 bg-[var(--color-background)]">
       <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white px-7 py-9 shadow-elevated">
         <div className="flex flex-col items-center gap-3 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 to-cyan-400 flex items-center justify-center text-3xl shadow-lg">💰</div>
+          <Image
+            src="/brand-logo.jpg"
+            alt="جيبك"
+            width={96}
+            height={96}
+            className="h-24 w-24 object-contain"
+            priority
+          />
           <h1 className="text-2xl font-extrabold text-slate-900">جيبك</h1>
           <p className="text-sm text-slate-500">سجّل دخولك واحفظ ميزانيتك ومصاريفك بأمان.</p>
         </div>
@@ -125,7 +133,7 @@ function LoginForm() {
         <button type="button" onClick={handleGoogleSignIn} disabled={loading} className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60">
           المتابعة باستخدام Google
         </button>
-        <p className="mt-5 text-center text-[11px] leading-5 text-slate-400">تُحفظ بيانات ميزانيتك ومصروفاتك في قاعدة البيانات الخاصة بحسابك.</p>
+        <p className="mt-5 text-center text-[11px] leading-5 text-slate-400">تُحفظ ميزانيتك ومصروفاتك بأمان في حسابك.</p>
       </div>
     </div>
   );

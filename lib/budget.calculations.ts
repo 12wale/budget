@@ -252,7 +252,7 @@ export function buildForecastDataPoints(
   });
 
   // Future projected trajectory
-  if (summary.spendingBaselineMinor > 0 && summary.remainingDays > 0 && summary.remainingBalanceMinor > 0) {
+  if (summary.remainingDays > 0 && summary.remainingBalanceMinor > 0) {
     const totalRemaining = summary.remainingDays;
     // Choose sensible interval: 1 day if total <= 10, else 3-7 days
     const step = totalRemaining <= 10 ? 2 : totalRemaining <= 30 ? 5 : 7;

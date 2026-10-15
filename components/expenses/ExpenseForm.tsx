@@ -111,7 +111,7 @@ export function ExpenseForm({ expense, onSuccess, onCancel }: ExpenseFormProps) 
 
   const categoryOptions = PRESET_CATEGORIES.map((c) => ({
     value: c.id,
-    label: `${c.icon} ${t(c.labelKey)}`,
+    label: t(c.labelKey),
   }));
 
   return (
