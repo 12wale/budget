@@ -12,6 +12,9 @@ type PlanRow = {
   forecast_mode: "planned" | "actual";
   created_at: string;
   updated_at: string;
+  status?: "active" | "ended";
+  ended_at?: string | null;
+  saved_balance_minor?: number | string;
 };
 
 type ExpenseRow = {
@@ -33,6 +36,9 @@ const toPlan = (row: PlanRow): BudgetPlan => ({
   targetDate: row.target_date,
   plannedDailySpendMinor: Number(row.planned_daily_spend_minor),
   forecastMode: row.forecast_mode,
+  status: row.status ?? "active",
+  endedAt: row.ended_at ?? null,
+  savedBalanceMinor: Number(row.saved_balance_minor ?? 0),
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
@@ -60,19 +66,27 @@ function databaseId(value: string): string {
 export async function loadUserBudget(userId: string): Promise<{
   plan: BudgetPlan | null;
   expenses: Expense[];
+  savingsMinor: number;
+  hasPlanHistory: boolean;
 }> {
   const supabase = createClient();
-  const [planResult, expensesResult] = await Promise.all([
-    supabase.from("budget_plans").select("*").eq("user_id", userId).maybeSingle(),
-    supabase.from("expenses").select("*").eq("user_id", userId).order("expense_date", { ascending: false }),
+  const [planResult, savingsResult] = await Promise.all([
+    supabase.from("budget_plans").select("*").eq("user_id", userId).eq("status", "active").maybeSingle(),
+    supabase.from("budget_plans").select("saved_balance_minor").eq("user_id", userId).eq("status", "ended"),
   ]);
 
   throwIfError(planResult.error);
+  throwIfError(savingsResult.error);
+  const expensesResult = planResult.data
+    ? await supabase.from("expenses").select("*").eq("user_id", userId).eq("plan_id", planResult.data.id).order("expense_date", { ascending: false })
+    : { data: [], error: null };
   throwIfError(expensesResult.error);
 
   return {
     plan: planResult.data ? toPlan(planResult.data as PlanRow) : null,
     expenses: (expensesResult.data ?? []).map((row) => toExpense(row as ExpenseRow)),
+    savingsMinor: (savingsResult.data ?? []).reduce((total, row) => total + Number(row.saved_balance_minor ?? 0), 0),
+    hasPlanHistory: (savingsResult.data ?? []).length > 0,
   };
 }
 
@@ -111,13 +125,27 @@ export async function saveUserPlan(userId: string, plan: BudgetPlan): Promise<Bu
         target_date: plan.targetDate,
         planned_daily_spend_minor: plan.plannedDailySpendMinor,
         forecast_mode: plan.forecastMode,
+        status: "active",
+        ended_at: null,
+        saved_balance_minor: 0,
       },
-      { onConflict: "user_id" }
+      { onConflict: "id" }
     )
     .select("*")
     .single();
   throwIfError(error);
   return toPlan(data as PlanRow);
+}
+
+export async function endUserPlan(userId: string, planId: string, savedBalanceMinor: number, endedAt: string): Promise<void> {
+  const supabase = createClient();
+  const { data, error } = await supabase.from("budget_plans").update({
+    status: "ended",
+    ended_at: endedAt,
+    saved_balance_minor: savedBalanceMinor,
+  }).eq("id", planId).eq("user_id", userId).eq("status", "active").select("id").maybeSingle();
+  throwIfError(error);
+  if (!data) throw new Error("Plan is no longer active");
 }
 
 export async function saveUserExpense(userId: string, expense: Expense, planId: string | null): Promise<void> {
@@ -152,7 +180,7 @@ export async function clearUserBudget(userId: string): Promise<void> {
 
 export async function replaceUserData(userId: string, data: LocalAppDataV1): Promise<LocalAppDataV1> {
   const supabase = createClient();
-  const currentPlan = await supabase.from("budget_plans").select("id").eq("user_id", userId).maybeSingle();
+  const currentPlan = await supabase.from("budget_plans").select("id").eq("user_id", userId).eq("status", "active").maybeSingle();
   throwIfError(currentPlan.error);
   const importedPlan = data.plan
     ? { ...data.plan, id: currentPlan.data?.id ?? databaseId(data.plan.id) }

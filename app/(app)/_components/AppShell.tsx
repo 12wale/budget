@@ -110,7 +110,7 @@ export function Sidebar() {
 
       {/* Navigation Links */}
       <nav className="flex flex-col gap-1.5 p-4 flex-1">
-        {NAV_ITEMS.map((item) => {
+        {(user ? NAV_ITEMS : NAV_ITEMS.filter((item) => item.href === "/overview")).map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
@@ -175,10 +175,7 @@ export function Sidebar() {
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[11px] font-bold text-slate-700">حسابك جاهز لحفظ بياناتك</span>
-          </div>
+          <Link href="/login?next=%2Foverview" className="flex items-center justify-center rounded-lg bg-indigo-600 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-700">دخول لحفظ خطتك</Link>
         )}
       </div>
     </aside>
@@ -192,6 +189,8 @@ export function Sidebar() {
 export function BottomNav() {
   const pathname = usePathname();
   const { t } = usePreferences();
+  const { user } = useAuth();
+  const items = user ? NAV_ITEMS : NAV_ITEMS.filter((item) => item.href === "/overview");
 
   return (
     <nav
@@ -199,7 +198,7 @@ export function BottomNav() {
       style={{ height: "calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px))" }}
       aria-label={t("nav.overview")}
     >
-      {NAV_ITEMS.map((item) => {
+      {items.map((item) => {
         const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
         return (
           <Link

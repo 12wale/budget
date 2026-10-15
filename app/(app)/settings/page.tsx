@@ -19,8 +19,8 @@ import { FiDownload, FiFolder, FiLock, FiTrash2 } from "react-icons/fi";
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { plan, expenses, resetAll, replaceData } = useBudget();
-  const { preferences, setLanguage, setCurrency, setPreferences, t } = usePreferences();
+  const { plan, expenses, resetAll, replaceData, savingsMinor } = useBudget();
+  const { preferences, setLanguage, setCurrency, setPreferences, t, formatAmount } = usePreferences();
 
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
@@ -91,6 +91,16 @@ export default function SettingsPage() {
           {t("common.disclaimer")}
         </p>
       </div>
+
+      <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 to-white">
+        <CardHeader>
+          <h2 className="text-base font-semibold text-emerald-900">التوفير</h2>
+        </CardHeader>
+        <CardBody>
+          <p className="text-2xl font-extrabold tabular-nums text-emerald-800">{formatAmount(savingsMinor)}</p>
+          <p className="mt-1 text-xs text-emerald-700">إجمالي المبالغ المتبقية من الخطط التي أنهيتها.</p>
+        </CardBody>
+      </Card>
 
       {/* Language & Currency Card */}
       <Card>

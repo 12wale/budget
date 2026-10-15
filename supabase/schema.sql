@@ -5,7 +5,7 @@ create extension if not exists pgcrypto;
 
 create table if not exists public.budget_plans (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null unique references auth.users(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
   currency text not null default 'EGP',
   starting_balance_minor bigint not null default 0 check (starting_balance_minor >= 0),
   fixed_commitments_minor bigint not null default 0 check (fixed_commitments_minor >= 0),
@@ -13,6 +13,9 @@ create table if not exists public.budget_plans (
   target_date date not null,
   planned_daily_spend_minor bigint not null default 0 check (planned_daily_spend_minor >= 0),
   forecast_mode text not null default 'planned' check (forecast_mode in ('planned', 'actual')),
+  status text not null default 'active' check (status in ('active', 'ended')),
+  ended_at timestamptz,
+  saved_balance_minor bigint not null default 0 check (saved_balance_minor >= 0),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint budget_plans_date_order check (target_date >= start_date),
@@ -38,9 +41,14 @@ create table if not exists public.preferences (
   updated_at timestamptz not null default now()
 );
 
--- The application keeps one active plan per account. This index also supports
--- the upsert conflict target when upgrading a database created by the first schema.
-create unique index if not exists budget_plans_user_id_uidx on public.budget_plans (user_id);
+-- Upgrade databases created with the original one-plan-per-user constraint.
+alter table public.budget_plans add column if not exists status text not null default 'active';
+alter table public.budget_plans add column if not exists ended_at timestamptz;
+alter table public.budget_plans add column if not exists saved_balance_minor bigint not null default 0;
+alter table public.budget_plans drop constraint if exists budget_plans_user_id_key;
+drop index if exists public.budget_plans_user_id_uidx;
+create unique index if not exists budget_plans_one_active_per_user_uidx
+  on public.budget_plans (user_id) where status = 'active';
 create index if not exists expenses_user_date_idx on public.expenses (user_id, expense_date desc);
 create index if not exists expenses_plan_id_idx on public.expenses (plan_id);
 

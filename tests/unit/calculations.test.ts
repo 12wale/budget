@@ -22,6 +22,9 @@ describe("Budget Calculations", () => {
     targetDate: target30Days,
     plannedDailySpendMinor: 20000, // 200 EGP / day
     forecastMode: "planned",
+    status: "active",
+    endedAt: null,
+    savedBalanceMinor: 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };

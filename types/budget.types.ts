@@ -8,6 +8,7 @@ export type Currency = "EGP" | "USD" | "EUR" | "GBP" | "SAR" | string;
 export type Language = "ar" | "en";
 
 export type ForecastMode = "planned" | "actual";
+export type BudgetPlanState = "active" | "ended";
 
 export type PlanStatus =
   | "healthy"
@@ -35,6 +36,9 @@ export type BudgetPlan = {
   /** User's estimated daily variable spend — stored in minor units */
   plannedDailySpendMinor: number;
   forecastMode: ForecastMode;
+  status: BudgetPlanState;
+  endedAt: string | null;
+  savedBalanceMinor: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -144,6 +148,7 @@ export type UIState = {
 export type BudgetAction =
   | { type: "START_LOAD" }
   | { type: "SET_PLAN"; plan: BudgetPlan }
+  | { type: "END_PLAN" }
   | { type: "ADD_EXPENSE"; expense: Expense }
   | { type: "UPDATE_EXPENSE"; expense: Expense }
   | { type: "DELETE_EXPENSE"; id: string }

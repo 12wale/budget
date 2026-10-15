@@ -23,6 +23,9 @@ export const BudgetPlanSchema = z.object({
   targetDate: isoDate,
   plannedDailySpendMinor: positiveMinor,
   forecastMode: z.enum(["planned", "actual"]),
+  status: z.enum(["active", "ended"]).default("active"),
+  endedAt: z.string().nullable().default(null),
+  savedBalanceMinor: positiveMinor.default(0),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

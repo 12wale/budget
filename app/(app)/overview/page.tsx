@@ -1,15 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { useBudget } from "@/context/BudgetContext";
 import { usePreferences } from "@/context/PreferencesContext";
+import { useAuth } from "@/context/AuthContext";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Modal } from "@/components/ui/Modal";
 import { SetupForm } from "@/components/budget/SetupForm";
 import { RunwayChart } from "@/components/charts/RunwayChart";
+import { InstallAppCard } from "../_components/InstallAppCard";
 import type { PlanStatus } from "@/types/budget.types";
 import { formatNumber } from "@/lib/currency";
 import { formatDate } from "@/lib/date";
@@ -20,11 +23,12 @@ import {
   FiBarChart2,
   FiBriefcase,
   FiCalendar,
-  FiDollarSign,
   FiEdit2,
   FiFileText,
   FiPlus,
   FiTarget,
+  FiCheckCircle,
+  FiLock,
 } from "react-icons/fi";
 
 // ─────────────────────────────────────────────
@@ -101,18 +105,35 @@ function StatCard({
 // ─────────────────────────────────────────────
 
 export default function OverviewPage() {
-  const { plan, expenses, summary } = useBudget();
+  const { plan, expenses, summary, endPlan, savingsMinor } = useBudget();
+  const { user } = useAuth();
   const { t, formatAmount, locale } = usePreferences();
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showEndModal, setShowEndModal] = useState(false);
 
   // ── 1. No Plan Yet: Premium Onboarding Screen ──
   if (!plan) {
     return (
       <div className="max-w-2xl mx-auto py-4 sm:py-8 animate-slide-up">
+        {user && savingsMinor > 0 && (
+          <Card className="mb-5 border-emerald-200 bg-emerald-50/70">
+            <CardBody className="flex items-center justify-between gap-3 p-4">
+              <div><p className="text-xs font-semibold text-emerald-800">التوفير من الخطط السابقة</p><p className="mt-1 text-lg font-extrabold text-emerald-900">{formatAmount(savingsMinor)}</p></div>
+              <FiCheckCircle className="h-6 w-6 text-emerald-600" aria-hidden="true" />
+            </CardBody>
+          </Card>
+        )}
         {/* Hero Banner */}
         <div className="text-center mb-8 relative">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 text-white shadow-xl shadow-indigo-500/25 mb-5 animate-float">
-            <FiDollarSign className="h-8 w-8" aria-hidden="true" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-white border border-slate-100 shadow-sm mb-5 animate-float">
+            <Image
+              src="/brand-logo.jpg"
+              alt="جيبك"
+              width={64}
+              height={64}
+              className="h-12 w-12 rounded-xl bg-white object-contain p-1"
+              priority
+            />
           </div>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-3">
             {t("setup.headline")}
@@ -127,6 +148,7 @@ export default function OverviewPage() {
             <SetupForm />
           </CardBody>
         </Card>
+        <div className="mt-5"><InstallAppCard /></div>
       </div>
     );
   }
@@ -145,12 +167,22 @@ export default function OverviewPage() {
         <Button onClick={() => setShowEditModal(true)} variant="primary">
           ✏️ {t("setup.edit")}
         </Button>
+        {user && <Button className="ms-2" variant="secondary" onClick={() => setShowEndModal(true)}>إنهاء الخطة</Button>}
         <Modal
           open={showEditModal}
           onClose={() => setShowEditModal(false)}
           title={t("setup.edit")}
         >
           <SetupForm editMode onSuccess={() => setShowEditModal(false)} />
+        </Modal>
+        <Modal
+          open={showEndModal}
+          onClose={() => setShowEndModal(false)}
+          title="إنهاء الخطة"
+          footer={<><Button variant="secondary" onClick={() => setShowEndModal(false)}>رجوع</Button><Button onClick={async () => { if (await endPlan()) setShowEndModal(false); }}>إنهاء وحفظ المتبقي كتوفير</Button></>}
+        >
+          <p className="text-sm leading-6 text-slate-600">سيتم إنهاء الخطة الحالية وحفظ المبلغ المتبقي في قسم التوفير بملفك الشخصي.</p>
+          {summary && <p className="mt-4 rounded-xl bg-emerald-50 p-3 text-sm font-bold text-emerald-800">المبلغ المتوقع حفظه: {formatAmount(Math.max(0, summary.remainingBalanceMinor))}</p>}
         </Modal>
       </div>
     );
@@ -195,11 +227,20 @@ export default function OverviewPage() {
           >
             {t("setup.edit")}
           </Button>
-          <Link href="/expenses" className="flex-1 sm:flex-initial">
+          {user && <Link href="/expenses" className="flex-1 sm:flex-initial">
             <Button size="sm" icon={<FiPlus />} className="w-full">
               {t("expenses.addExpense")}
             </Button>
-          </Link>
+          </Link>}
+          {user ? (
+            <Button variant="secondary" size="sm" icon={<FiCheckCircle />} onClick={() => setShowEndModal(true)} className="flex-1 sm:flex-initial">
+              إنهاء الخطة
+            </Button>
+          ) : (
+            <Link href="/login?next=%2Foverview" className="flex-1 sm:flex-initial">
+              <Button variant="secondary" size="sm" icon={<FiLock />} className="w-full">سجّل واحفظ خطتك</Button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -272,9 +313,10 @@ export default function OverviewPage() {
 
       {/* ── Forecast Area Chart ─────────────────── */}
       <RunwayChart plan={plan} summary={sum} />
+      <InstallAppCard />
 
       {/* ── Recent Expenses List ────────────────── */}
-      <Card>
+      {user && <Card>
         <div className="px-5 py-4 sm:px-6 border-b border-[var(--color-border)] flex items-center justify-between">
           <div className="flex items-center gap-2">
             <FiFileText className="h-5 w-5 text-slate-500" aria-hidden="true" />
@@ -329,9 +371,24 @@ export default function OverviewPage() {
             })}
           </ul>
         )}
-      </Card>
+      </Card>}
 
       {/* Edit Plan Modal */}
+      <Modal
+        open={showEndModal}
+        onClose={() => setShowEndModal(false)}
+        title="إنهاء الخطة"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowEndModal(false)}>رجوع</Button>
+            <Button onClick={async () => { if (await endPlan()) setShowEndModal(false); }}>إنهاء وحفظ المتبقي كتوفير</Button>
+          </>
+        }
+      >
+        <p className="text-sm leading-6 text-slate-600">سيتم إنهاء الخطة الحالية وحفظ المبلغ المتبقي في قسم التوفير بملفك الشخصي. لن يدخل التوفير تلقائيًا في أي خطة جديدة.</p>
+        {summary && <p className="mt-4 rounded-xl bg-emerald-50 p-3 text-sm font-bold text-emerald-800">المبلغ المتوقع حفظه: {formatAmount(Math.max(0, summary.remainingBalanceMinor))}</p>}
+      </Modal>
+
       <Modal
         open={showEditModal}
         onClose={() => setShowEditModal(false)}

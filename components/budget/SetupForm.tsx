@@ -91,6 +91,9 @@ export function SetupForm({ editMode = false, onSuccess }: SetupFormProps) {
       targetDate: data.targetDate,
       plannedDailySpendMinor: decimalToMinor(Number(data.plannedDailySpend), data.currency),
       forecastMode: "planned",
+      status: "active",
+      endedAt: null,
+      savedBalanceMinor: 0,
       createdAt: plan?.createdAt ?? now,
       updatedAt: now,
     };

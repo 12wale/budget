@@ -20,7 +20,7 @@ import type {
   UIState,
 } from "@/types/budget.types";
 import { calculateBudgetSummary } from "@/lib/budget.calculations";
-import { clearAppData, loadAppData } from "@/lib/storage";
+import { clearAppData, loadAppData, saveAppData } from "@/lib/storage";
 import { useAuth } from "@/context/AuthContext";
 import {
   clearUserBudget,
@@ -29,6 +29,7 @@ import {
   replaceUserData,
   saveUserExpense,
   saveUserPlan,
+  endUserPlan,
 } from "@/lib/supabase/repository";
 
 // ─────────────────────────────────────────────
@@ -72,6 +73,13 @@ function budgetReducer(state: BudgetState, action: BudgetAction): BudgetState {
     case "SET_PLAN":
       return { ...state, plan: action.plan };
 
+    case "END_PLAN":
+      return {
+        ...state,
+        plan: null,
+        expenses: [],
+      };
+
     case "ADD_EXPENSE":
       return { ...state, expenses: [...state.expenses, action.expense] };
 
@@ -109,12 +117,14 @@ function budgetReducer(state: BudgetState, action: BudgetAction): BudgetState {
 
 type BudgetContextValue = {
   plan: BudgetPlan | null;
+  savingsMinor: number;
   expenses: Expense[];
   summary: BudgetSummary | null;
   ui: UIState;
   hydrated: boolean;
   // Actions
   setPlan: (plan: BudgetPlan) => Promise<boolean>;
+  endPlan: () => Promise<boolean>;
   addExpense: (expense: Expense) => Promise<boolean>;
   updateExpense: (expense: Expense) => Promise<boolean>;
   deleteExpense: (id: string) => Promise<boolean>;
@@ -136,6 +146,7 @@ const BudgetContext = createContext<BudgetContextValue | null>(null);
 export function BudgetProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(budgetReducer, INITIAL_STATE);
   const [localDataPending, setLocalDataPending] = useState(false);
+  const [savingsMinor, setSavingsMinor] = useState(0);
   const { user, loading: authLoading } = useAuth();
   const currentUserId = useRef<string | null>(null);
 
@@ -148,28 +159,34 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
 
     if (!userId) {
       setLocalDataPending(false);
-      dispatch({ type: "HYDRATE", data: { schemaVersion: 1, plan: null, expenses: [], preferences: { language: "ar", currency: "EGP" } } });
+      setSavingsMinor(0);
+      const local = loadAppData();
+      dispatch({ type: "HYDRATE", data: local.ok ? local.data : { schemaVersion: 1, plan: null, expenses: [], preferences: { language: "ar", currency: "EGP" } } });
       return;
     }
 
     setLocalDataPending(false);
+    setSavingsMinor(0);
     dispatch({ type: "START_LOAD" });
     loadUserBudget(userId)
-      .then((data) => {
+      .then(async (data) => {
         if (!cancelled && currentUserId.current === userId) {
+          const local = loadAppData();
+          if (!data.plan && !data.hasPlanHistory && local.ok && (local.data.plan || local.data.expenses.length > 0)) {
+            const imported = await replaceUserData(userId, local.data);
+            if (cancelled || currentUserId.current !== userId) return;
+            data = { ...data, ...imported };
+            clearAppData();
+          }
           setLocalDataPending(false);
           dispatch({ type: "HYDRATE", data: { schemaVersion: 1, ...data, preferences: { language: "ar", currency: "EGP" } } });
+          setSavingsMinor(data.savingsMinor);
           dispatch({ type: "SET_STORAGE_ERROR", error: null });
-          if (!data.plan && data.expenses.length === 0) {
-            const local = loadAppData();
-            setLocalDataPending(Boolean(local.ok && (local.data.plan || local.data.expenses.length)));
-          } else {
-            setLocalDataPending(false);
-          }
         }
       })
       .catch(() => {
         if (!cancelled && currentUserId.current === userId) {
+          setSavingsMinor(0);
           dispatch({ type: "HYDRATE", data: { schemaVersion: 1, plan: null, expenses: [], preferences: { language: "ar", currency: "EGP" } } });
           dispatch({ type: "SET_STORAGE_ERROR", error: "تعذر تحميل بياناتك. تحقق من اتصالك ثم حاول مرة أخرى." });
         }
@@ -189,7 +206,15 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
   // ─── Actions ───────────────────────────────
 
   const setPlan = useCallback(async (plan: BudgetPlan) => {
-    if (!user || currentUserId.current !== user.id) return false;
+    if (!user) {
+      const current = loadAppData();
+      if (!current.ok) return false;
+      const savedLocal = saveAppData({ ...current.data, plan: { ...plan, status: "active", endedAt: null, savedBalanceMinor: 0 } });
+      if (!savedLocal.ok) return false;
+      dispatch({ type: "SET_PLAN", plan: { ...plan, status: "active", endedAt: null, savedBalanceMinor: 0 } });
+      return true;
+    }
+    if (currentUserId.current !== user.id) return false;
     try {
       const savedPlan = await saveUserPlan(user.id, plan);
       dispatch({ type: "SET_PLAN", plan: savedPlan });
@@ -200,6 +225,22 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
       return false;
     }
   }, [user]);
+
+  const endPlan = useCallback(async () => {
+    if (!state.plan || !summary || !user || currentUserId.current !== user.id) return false;
+    try {
+      const endedAt = new Date().toISOString();
+      const savedBalanceMinor = Math.max(0, summary.remainingBalanceMinor);
+      await endUserPlan(user.id, state.plan.id, savedBalanceMinor, endedAt);
+      dispatch({ type: "END_PLAN" });
+      setSavingsMinor((value) => value + savedBalanceMinor);
+      dispatch({ type: "SET_STORAGE_ERROR", error: null });
+      return true;
+    } catch {
+      dispatch({ type: "SET_STORAGE_ERROR", error: "تعذر إنهاء الخطة. حاول مرة أخرى." });
+      return false;
+    }
+  }, [state.plan, summary, user]);
 
   const addExpense = useCallback(async (expense: Expense) => {
     if (!user || currentUserId.current !== user.id) return false;
@@ -245,6 +286,7 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
     try {
       await clearUserBudget(user.id);
       dispatch({ type: "RESET_ALL" });
+      setSavingsMinor(0);
       dispatch({ type: "SET_STORAGE_ERROR", error: null });
       return true;
     } catch {
@@ -301,11 +343,13 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
     <BudgetContext.Provider
       value={{
         plan: state.plan,
+        savingsMinor,
         expenses: state.expenses,
         summary,
         ui: state.ui,
         hydrated: state.hydrated,
         setPlan,
+        endPlan,
         addExpense,
         updateExpense,
         deleteExpense,

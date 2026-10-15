@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { Providers } from "./_components/Providers";
 import { Sidebar, BottomNav, StorageErrorBanner, MobileTopBar } from "./_components/AppShell";
+import { AccountGate } from "./_components/AccountGate";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -25,7 +26,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   </div>
                 }
               >
-                {children}
+                <AccountGate>{children}</AccountGate>
               </Suspense>
             </div>
           </main>

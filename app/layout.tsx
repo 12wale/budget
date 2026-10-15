@@ -32,6 +32,14 @@ export const metadata: Metadata = {
     locale: "ar_EG",
     type: "website",
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "جيبك",
+  },
+  icons: {
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({
