@@ -52,6 +52,15 @@ create unique index if not exists budget_plans_one_active_per_user_uidx
 create index if not exists expenses_user_date_idx on public.expenses (user_id, expense_date desc);
 create index if not exists expenses_plan_id_idx on public.expenses (plan_id);
 
+-- Email ownership is confirmed by Firebase; this claim is set server-side only.
+create or replace function public.is_email_verified()
+returns boolean
+language sql
+stable
+as $$
+  select coalesce(auth.jwt()->'app_metadata'->>'email_verified' = 'true', false);
+$$;
+
 alter table public.budget_plans enable row level security;
 alter table public.expenses enable row level security;
 alter table public.preferences enable row level security;
@@ -59,15 +68,16 @@ alter table public.preferences enable row level security;
 drop policy if exists "Users can manage their own plans" on public.budget_plans;
 create policy "Users can manage their own plans" on public.budget_plans
   for all to authenticated
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+  using (auth.uid() = user_id and public.is_email_verified())
+  with check (auth.uid() = user_id and public.is_email_verified());
 
 drop policy if exists "Users can manage their own expenses" on public.expenses;
 create policy "Users can manage their own expenses" on public.expenses
   for all to authenticated
-  using (auth.uid() = user_id)
+  using (auth.uid() = user_id and public.is_email_verified())
   with check (
     auth.uid() = user_id
+    and public.is_email_verified()
     and (
       plan_id is null
       or exists (
@@ -80,8 +90,8 @@ create policy "Users can manage their own expenses" on public.expenses
 drop policy if exists "Users can manage their own preferences" on public.preferences;
 create policy "Users can manage their own preferences" on public.preferences
   for all to authenticated
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+  using (auth.uid() = user_id and public.is_email_verified())
+  with check (auth.uid() = user_id and public.is_email_verified());
 
 create or replace function public.set_updated_at()
 returns trigger

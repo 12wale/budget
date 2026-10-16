@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { setEmailVerified } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -19,6 +20,13 @@ export async function GET(request: Request) {
       const supabase = await createClient();
       const { error } = await supabase.auth.exchangeCodeForSession(code);
       if (!error) {
+        const { data: { user } } = await supabase.auth.getUser();
+        const isGoogleIdentity = user?.app_metadata?.provider === "google"
+          || user?.identities?.some((identity) => identity.provider === "google");
+        if (user && isGoogleIdentity) {
+          await setEmailVerified(user.id, user.app_metadata ?? {});
+          await supabase.auth.refreshSession();
+        }
         return NextResponse.redirect(new URL(next, origin));
       }
     } catch {

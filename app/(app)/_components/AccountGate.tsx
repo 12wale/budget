@@ -10,7 +10,7 @@ import { FiLock } from "react-icons/fi";
 export function AccountGate({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const pathname = usePathname();
-  if (pathname === "/overview" || loading || user) return children;
+  if ((pathname === "/overview" && !user) || loading || user?.app_metadata?.email_verified === true) return children;
 
   return (
     <Card className="mx-auto max-w-lg mt-8">

@@ -43,7 +43,15 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (pathname === "/login" && user) {
+  const emailVerified = user?.app_metadata?.email_verified === true;
+  if (isProtected && user && !emailVerified) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    loginUrl.searchParams.set("error", "unverified");
+    return NextResponse.redirect(loginUrl);
+  }
+
+  if (pathname === "/login" && user && emailVerified) {
     const destination = request.nextUrl.searchParams.get("next");
     const safeDestination = destination?.startsWith("/") && !destination.startsWith("//")
       ? destination
