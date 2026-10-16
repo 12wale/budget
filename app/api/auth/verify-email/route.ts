@@ -8,7 +8,7 @@ export async function POST(request: Request) {
   const supabaseToken = authorization?.startsWith("Bearer ") ? authorization.slice(7) : "";
   const body = await request.json().catch(() => null) as { firebaseIdToken?: string } | null;
   const firebaseIdToken = body?.firebaseIdToken;
-  const firebaseApiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  const firebaseApiKey = process.env.FIREBASE_API_KEY;
 
   if (!supabaseToken || !firebaseIdToken || !firebaseApiKey) {
     return NextResponse.json({ error: "بيانات التحقق غير مكتملة." }, { status: 400 });

@@ -24,16 +24,16 @@ In Firebase project `budget-1a2bb`:
 
 ## 4. Configure environment variables
 
-Copy the Firebase web app values from Firebase **Project settings → General → Your apps → Web app** into `.env.local` and Vercel **Project → Settings → Environment Variables**:
+The app calls Firebase from a Next.js server route, so the Firebase config variables do not need a `NEXT_PUBLIC_` prefix. Add these names in `.env.local` and Vercel **Project → Settings → Environment Variables**:
 
 ```env
-NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyCGYLHylNd4zuxxgavH6lV80Z3qe_32xWg
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=budget-1a2bb.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=budget-1a2bb
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=budget-1a2bb.firebasestorage.app
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=572507365191
-NEXT_PUBLIC_FIREBASE_APP_ID=1:572507365191:web:9b62591debea7c1434f662
-NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-2WK3H79FQR
+FIREBASE_API_KEY=your-firebase-web-api-key
+FIREBASE_AUTH_DOMAIN=budget-1a2bb.firebaseapp.com
+FIREBASE_PROJECT_ID=budget-1a2bb
+FIREBASE_STORAGE_BUCKET=budget-1a2bb.firebasestorage.app
+FIREBASE_MESSAGING_SENDER_ID=572507365191
+FIREBASE_APP_ID=1:572507365191:web:9b62591debea7c1434f662
+FIREBASE_MEASUREMENT_ID=G-2WK3H79FQR
 ```
 
 Also set the existing Supabase URL and publishable/anon key, plus:
@@ -42,7 +42,7 @@ Also set the existing Supabase URL and publishable/anon key, plus:
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-Set `SUPABASE_SERVICE_ROLE_KEY` in local `.env.local` and Vercel as a server-side secret. The Firebase web config is public client configuration; the Supabase service-role key is secret and must never be exposed to browser code.
+Set `FIREBASE_API_KEY` and `SUPABASE_SERVICE_ROLE_KEY` in local `.env.local` and Vercel. Both are read by server code; mark `SUPABASE_SERVICE_ROLE_KEY` as sensitive/secret. The other Firebase web app values above are informational and are not currently read by the verification flow; `FIREBASE_API_KEY` is the only Firebase variable required by the code.
 
 ## 5. Configure Vercel and test the flow
 
