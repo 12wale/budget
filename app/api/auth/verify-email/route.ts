@@ -13,6 +13,12 @@ export async function POST(request: Request) {
   if (!supabaseToken || !firebaseIdToken || !firebaseApiKey) {
     return NextResponse.json({ error: "بيانات التحقق غير مكتملة." }, { status: 400 });
   }
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return NextResponse.json(
+      { error: "إعدادات الخادم ناقصة: أضف SUPABASE_SERVICE_ROLE_KEY في متغيرات بيئة Vercel ثم أعد النشر." },
+      { status: 500 },
+    );
+  }
 
   try {
     const { url, anonKey } = getSupabaseConfig();
