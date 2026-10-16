@@ -23,8 +23,14 @@ async function firebaseRequest<T>(method: string, body: Record<string, unknown>)
       INVALID_LOGIN_CREDENTIALS: "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
       TOO_MANY_ATTEMPTS_TRY_LATER: "محاولات كثيرة. انتظر قليلًا ثم حاول مرة أخرى.",
       OPERATION_NOT_ALLOWED: "فعّل Email/Password في Firebase Authentication.",
+      API_KEY_INVALID: "مفتاح Firebase غير صحيح. راجع قيمة FIREBASE_API_KEY في إعدادات Vercel.",
+      CONFIGURATION_NOT_FOUND: "إعداد Email/Password غير مكتمل في Firebase Authentication.",
+      PROJECT_NOT_FOUND: "مشروع Firebase غير موجود أو مفتاحه لا يخص المشروع الصحيح.",
+      INVALID_CONTINUE_URI: "رابط العودة غير مقبول. أضف نطاق التطبيق إلى Firebase Authorized domains.",
+      UNAUTHORIZED_DOMAIN: "نطاق التطبيق غير مسموح. أضفه في Firebase Authentication → Settings → Authorized domains.",
+      QUOTA_EXCEEDED: "تم تجاوز حد إرسال رسائل Firebase مؤقتًا. حاول لاحقًا.",
     };
-    throw new Error(messages[code] ?? "تعذر إكمال التحقق عبر Firebase.");
+    throw new Error(messages[code] ?? `تعذر إكمال التحقق عبر Firebase (${code ?? "UNKNOWN_ERROR"}).`);
   }
   return result as T;
 }
@@ -46,7 +52,11 @@ export async function sendFirebaseVerification(email: string, password: string, 
   });
 }
 
-export async function getFirebaseVerifiedToken(email: string, password: string): Promise<string | null> {
+export async function getFirebaseVerifiedToken(
+  email: string,
+  password: string,
+  continueUrl: string,
+): Promise<string | null> {
   let account: FirebaseAuthResponse;
   try {
     account = await firebaseRequest<FirebaseAuthResponse>("accounts:signInWithPassword", {
@@ -54,6 +64,8 @@ export async function getFirebaseVerifiedToken(email: string, password: string):
     });
   } catch (error) {
     if (!(error instanceof Error) || !error.message.includes("لا يوجد حساب تحقق")) throw error;
+    // Recover when Supabase signup succeeded but Firebase account creation/email sending failed.
+    await sendFirebaseVerification(email, password, continueUrl);
     return null;
   }
   const lookup = await firebaseRequest<{ users?: Array<{ emailVerified?: boolean; email?: string }> }>("accounts:lookup", {

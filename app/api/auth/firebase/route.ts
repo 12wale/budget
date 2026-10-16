@@ -20,12 +20,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ sent: true });
     }
     if (body?.action === "get-verified-token") {
-      const idToken = await getFirebaseVerifiedToken(email, password);
+      const continueUrl = new URL("/login?verified=1", request.url).toString();
+      const idToken = await getFirebaseVerifiedToken(email, password, continueUrl);
       return NextResponse.json({ idToken });
     }
     return NextResponse.json({ error: "طلب غير صالح." }, { status: 400 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "تعذر إكمال التحقق عبر Firebase.";
-    return NextResponse.json({ error: message }, { status: 400 });
+    const status = message.includes("غير مكتملة على الخادم") ? 500 : 400;
+    return NextResponse.json({ error: message }, { status });
   }
 }
