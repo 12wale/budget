@@ -51,6 +51,7 @@ function LoginForm() {
     if (lower.includes("invalid login") || lower.includes("invalid credentials")) return "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
     if (lower.includes("already registered") || lower.includes("already been registered")) return "هذا البريد مسجل بالفعل. جرّب تسجيل الدخول.";
     if (lower.includes("firebase is not configured")) return "أضف إعدادات Firebase إلى متغيرات البيئة ثم أعد تشغيل التطبيق.";
+    if (lower.includes("error sending confirmation email") || lower.includes("sending confirmation email")) return "Supabase ما زال يحاول إرسال رسالة التأكيد. من لوحة Supabase افتح Authentication → Sign In / Providers → Email، ثم عطّل Confirm email واحفظ التغيير. تأكد أيضًا أنك شغّلت schema.sql في SQL Editor.";
     if (lower.includes("failed to fetch") || lower.includes("network") || lower.includes("fetch failed")) return "تعذر الاتصال بخدمة تسجيل الدخول. تحقق من الإنترنت وحاول مرة أخرى.";
     if (lower.includes("signup is disabled") || lower.includes("signups not allowed") || lower.includes("email_provider_disabled")) return "إنشاء الحسابات بالبريد غير مفعّل في Supabase. فعّل Email provider والسماح بالتسجيل.";
     if (lower.includes("password")) return "كلمة المرور يجب أن تكون 8 أحرف على الأقل.";
