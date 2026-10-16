@@ -36,13 +36,15 @@ FIREBASE_APP_ID=1:572507365191:web:9b62591debea7c1434f662
 FIREBASE_MEASUREMENT_ID=G-2WK3H79FQR
 ```
 
-Also set the existing Supabase URL and publishable/anon key, plus:
+Also set these Supabase values (without a `NEXT_PUBLIC_` prefix), plus:
 
 ```env
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-supabase-publishable-or-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-Set `FIREBASE_API_KEY` and `SUPABASE_SERVICE_ROLE_KEY` in local `.env.local` and Vercel. Both are read by server code; mark `SUPABASE_SERVICE_ROLE_KEY` as sensitive/secret. The other Firebase web app values above are informational and are not currently read by the verification flow; `FIREBASE_API_KEY` is the only Firebase variable required by the code.
+Set `FIREBASE_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` in local `.env.local` and Vercel. Mark `SUPABASE_SERVICE_ROLE_KEY` as sensitive/secret. The Supabase URL and publishable/anon key are public values that Next.js embeds in the browser bundle through `next.config.ts`; never put the service-role key there. The other Firebase web app values above are informational and are not currently read by the verification flow; `FIREBASE_API_KEY` is the only Firebase variable required by the code.
 
 ## 5. Configure Vercel and test the flow
 
