@@ -9,6 +9,7 @@ import {
 } from "react";
 import type { User, Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import { getAppOrigin } from "@/lib/url";
 
 // ─────────────────────────────────────────────
 // Context
@@ -75,10 +76,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function signUpWithPassword(email: string, password: string) {
     try {
       const supabase = createClient();
+      const origin = getAppOrigin();
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+        options: { emailRedirectTo: `${origin}/auth/callback` },
       });
       return {
         error: error?.message ?? null,
@@ -95,10 +97,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function signInWithGoogle() {
     try {
       const supabase = createClient();
+      const origin = getAppOrigin();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${origin}/auth/callback`,
           queryParams: { access_type: "offline", prompt: "consent" },
         },
       });

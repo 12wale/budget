@@ -1,14 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  // These two values are Supabase's public URL and publishable/anon key.
-  // Expose them to the browser bundle while allowing Vercel variable names
-  // without the NEXT_PUBLIC_ prefix.
+  // Only publish the Supabase URL and publishable/anon key to browser code.
+  // Keep backwards compatibility with existing Vercel variable names.
   env: {
-    SUPABASE_URL: process.env.SUPABASE_URL ?? "",
-    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY ?? "",
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL ?? "",
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY ?? "",
   },
+  /* config options here */
   experimental: {
     agentFeedback: true,
   },

@@ -1,3 +1,5 @@
+import "server-only";
+
 type FirebaseAuthResponse = { idToken: string; email: string; localId: string };
 
 function getApiKey(): string {

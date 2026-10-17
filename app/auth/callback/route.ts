@@ -1,13 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { setEmailVerified } from "@/lib/supabase/admin";
+import { getAppOrigin } from "@/lib/url";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+  const requestUrl = new URL(request.url);
+  const { searchParams } = requestUrl;
+  const origin = getAppOrigin(request);
   const code = searchParams.get("code");
   const requestedNext = searchParams.get("next");
-  const next = requestedNext?.startsWith("/") && !requestedNext.startsWith("//")
+  const next = requestedNext?.startsWith("/") && !requestedNext.startsWith("//") && !requestedNext.startsWith("/\\")
     ? requestedNext
     : "/overview";
 

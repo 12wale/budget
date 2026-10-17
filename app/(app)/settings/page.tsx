@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, type ChangeEvent } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useBudget } from "@/context/BudgetContext";
 import { usePreferences } from "@/context/PreferencesContext";
@@ -12,19 +12,16 @@ import { SUPPORTED_CURRENCIES } from "@/lib/currency";
 import {
   exportExpensesCSV,
   downloadCSV,
-  validateBackupJSON,
 } from "@/lib/storage";
 import type { Language, LocalAppDataV1 } from "@/types/budget.types";
-import { FiDownload, FiFolder, FiLock, FiTrash2 } from "react-icons/fi";
+import { FiDownload, FiLock, FiTrash2 } from "react-icons/fi";
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { plan, expenses, resetAll, replaceData, savingsMinor } = useBudget();
-  const { preferences, setLanguage, setCurrency, setPreferences, t, formatAmount } = usePreferences();
+  const { plan, expenses, resetAll, savingsMinor } = useBudget();
+  const { preferences, setLanguage, setCurrency, t, formatAmount } = usePreferences();
 
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
-  const [importStatus, setImportStatus] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const languageOptions = [
     { value: "ar", label: "العربية (Arabic)" },
@@ -46,34 +43,6 @@ export default function SettingsPage() {
     const csv = exportExpensesCSV(data);
     const dateStr = new Date().toISOString().slice(0, 10);
     downloadCSV(csv, `budget-expenses-${dateStr}.csv`);
-  }
-
-  function handleImportFile(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const content = event.target?.result as string;
-      const res = validateBackupJSON(content);
-      if (!res.ok) {
-        setImportStatus(`خطأ في استيراد الملف: ${res.error}`);
-        return;
-      }
-
-      const saved = await replaceData(res.data);
-      if (!saved) {
-        setImportStatus("تعذر استعادة النسخة. حاول مرة أخرى.");
-        return;
-      }
-      setPreferences(res.data.preferences);
-      setImportStatus("تم استيراد النسخة الاحتياطية إلى حسابك بنجاح.");
-    };
-
-    reader.readAsText(file);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
   }
 
   async function handleConfirmReset() {
@@ -145,47 +114,6 @@ export default function SettingsPage() {
               <FiDownload className="h-4 w-4" aria-hidden="true" /> تصدير CSV
             </Button>
           </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--color-border)]">
-            <div>
-              <p className="text-sm font-medium">استعادة نسخة محفوظة</p>
-              <p className="text-xs" style={{ color: "var(--color-muted)" }}>
-                اختر ملف نسخة محفوظة لاستعادة خطتك ومصروفاتك.
-              </p>
-            </div>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="w-full sm:w-auto"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <FiFolder className="h-4 w-4" aria-hidden="true" /> استعادة نسخة
-            </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".json"
-              className="hidden"
-              onChange={handleImportFile}
-            />
-          </div>
-
-          {importStatus && (
-            <div
-              role="alert"
-              className="p-3 rounded-lg text-xs font-medium"
-              style={{
-                background: importStatus.includes("خطأ") || importStatus.includes("تعذر")
-                  ? "var(--color-danger-subtle)"
-                  : "var(--color-success-subtle)",
-                color: importStatus.includes("خطأ") || importStatus.includes("تعذر")
-                  ? "var(--color-danger)"
-                  : "var(--color-success)",
-              }}
-            >
-              {importStatus}
-            </div>
-          )}
 
           {/* Destructive Reset */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">

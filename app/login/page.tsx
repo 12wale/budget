@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { createClient } from "@/lib/supabase/client";
 import { getFirebaseVerifiedToken, sendFirebaseVerification } from "@/lib/firebase/rest";
+import { getAppOrigin } from "@/lib/url";
 
 type AuthMode = "signin" | "signup";
 
@@ -28,6 +29,17 @@ function LoginForm() {
   const nextPath = searchParams.get("next");
   const safeNext = nextPath?.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/overview";
 
+  // Clean sensitive tokens from URL hash (e.g. #access_token=...&refresh_token=...)
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hash) {
+      const hash = window.location.hash;
+      if (hash.includes("access_token") || hash.includes("refresh_token") || hash.includes("id_token")) {
+        const cleanUrl = window.location.pathname + window.location.search;
+        window.history.replaceState(null, "", cleanUrl);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const timer = window.setTimeout(() => setResendCooldown((seconds) => seconds - 1), 1000);
@@ -48,19 +60,31 @@ function LoginForm() {
 
   function readableError(message: string) {
     const lower = message.toLowerCase();
+    // Prevent leaking tokens, bearer, jwt or raw credentials
+    if (
+      lower.includes("bearer") ||
+      lower.includes("jwt") ||
+      lower.includes("eyjh") ||
+      lower.includes("token") ||
+      lower.includes("secret") ||
+      lower.includes("api_key") ||
+      lower.includes("sb_")
+    ) {
+      return "تعذر إكمال عملية المصادقة. يرجى إعادة المحاولة.";
+    }
+
     if (lower.includes("invalid login") || lower.includes("invalid credentials")) return "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
     if (lower.includes("already registered") || lower.includes("already been registered")) return "هذا البريد مسجل بالفعل. جرّب تسجيل الدخول.";
-    if (lower.includes("إعدادات firebase غير مكتملة")) return "أضف FIREBASE_API_KEY إلى متغيرات البيئة ثم أعد تشغيل التطبيق.";
-    if (lower.includes("error sending confirmation email") || lower.includes("sending confirmation email")) return "Supabase ما زال يحاول إرسال رسالة التأكيد. من لوحة Supabase افتح Authentication → Sign In / Providers → Email، ثم عطّل Confirm email واحفظ التغيير. تأكد أيضًا أنك شغّلت schema.sql في SQL Editor.";
+    if (lower.includes("إعدادات firebase غير مكتملة")) return "إعدادات المصادقة غير مكتملة على الخادم.";
+    if (lower.includes("error sending confirmation email") || lower.includes("sending confirmation email")) return "تعذر إرسال رسالة التأكيد. راجع إعدادات البريد في Supabase.";
     if (lower.includes("failed to fetch") || lower.includes("network") || lower.includes("fetch failed")) return "تعذر الاتصال بخدمة تسجيل الدخول. تحقق من الإنترنت وحاول مرة أخرى.";
-    if (lower.includes("signup is disabled") || lower.includes("signups not allowed") || lower.includes("email_provider_disabled")) return "إنشاء الحسابات بالبريد غير مفعّل في Supabase. فعّل Email provider والسماح بالتسجيل.";
+    if (lower.includes("signup is disabled") || lower.includes("signups not allowed") || lower.includes("email_provider_disabled")) return "إنشاء الحسابات غير متاح حالياً. تواصل مع الدعم.";
     if (lower.includes("password")) return "كلمة المرور يجب أن تكون 8 أحرف على الأقل.";
-    if (lower.includes("supabase is not configured")) return "تعذر الاتصال بخدمة الحسابات. حاول مرة أخرى بعد قليل.";
-    if (searchParams.get("error") === "config") return "تعذر الاتصال بخدمة الحسابات. حاول مرة أخرى بعد قليل.";
+    if (lower.includes("supabase is not configured") || searchParams.get("error") === "config") return "تعذر الاتصال بخدمة الحسابات. حاول مرة أخرى بعد قليل.";
     if (searchParams.get("error") === "auth") return "تعذر إكمال تسجيل الدخول. حاول مرة أخرى.";
     if (searchParams.get("error") === "unverified") return "أكد بريدك الإلكتروني أولًا، ثم سجّل الدخول مرة أخرى.";
-    if (message.trim()) return `تعذر إتمام العملية. التفاصيل: ${message.trim().slice(0, 180)}`;
-    return "تعذر إتمام العملية. تحقق من اتصالك ثم حاول مرة أخرى.";
+    
+    return "تعذر إتمام العملية. يرجى التحقق من اتصالك والمحاولة مرة أخرى.";
   }
 
   function getErrorMessage(caught: unknown) {
@@ -123,12 +147,13 @@ function LoginForm() {
           setLoading(false);
           return;
         }
+        const appOrigin = getAppOrigin();
         const { data, error: authError } = await supabase.auth.signUp({
           email: email.trim(),
           password,
           options: {
             data: { full_name: fullName.trim() },
-            emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}`,
+            emailRedirectTo: `${appOrigin}/auth/callback?next=${encodeURIComponent(safeNext)}`,
           },
         });
         if (authError) throw authError;
@@ -186,7 +211,8 @@ function LoginForm() {
     setError(null);
     try {
       const supabase = createClient();
-      const callback = new URL("/auth/callback", window.location.origin);
+      const appOrigin = getAppOrigin();
+      const callback = new URL("/auth/callback", appOrigin);
       callback.searchParams.set("next", safeNext);
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: "google",

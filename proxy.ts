@@ -53,7 +53,7 @@ export async function proxy(request: NextRequest) {
 
   if (pathname === "/login" && user && emailVerified) {
     const destination = request.nextUrl.searchParams.get("next");
-    const safeDestination = destination?.startsWith("/") && !destination.startsWith("//")
+    const safeDestination = destination?.startsWith("/") && !destination.startsWith("//") && !destination.startsWith("/\\")
       ? destination
       : "/overview";
     return NextResponse.redirect(new URL(safeDestination, request.url));

@@ -1,7 +1,10 @@
 import { createBrowserClient } from "@supabase/ssr";
-import { getSupabaseConfig } from "@/lib/supabase/config";
 
 export function createClient() {
-  const { url, anonKey } = getSupabaseConfig();
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anonKey) {
+    throw new Error("Supabase browser config is missing. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.");
+  }
   return createBrowserClient(url, anonKey);
 }

@@ -8,7 +8,7 @@ Existing password accounts without this claim will be asked to verify their emai
 
 ## 2. Configure Supabase Auth
 
-1. Under **Authentication → URL Configuration**, set the Site URL for local development to `http://localhost:3000` and add `http://localhost:3000/auth/callback` and the production URL `https://budget-three-bay.vercel.app/auth/callback` to Redirect URLs.
+1. Under **Authentication → URL Configuration**, set the Site URL to the production origin and add `http://localhost:3000/auth/callback` plus the production callback URL to Redirect URLs. In Vercel, set `NEXT_PUBLIC_APP_URL` and `APP_URL` to the production origin (for example `https://budget-three-bay.vercel.app`) so auth redirects never fall back to localhost in production.
 2. Under **Authentication → Sign In / Providers → Email**, keep Email enabled and turn **Confirm email** off. The app sends Firebase verification email instead; Supabase must return a session so the server can securely bind the Firebase verification to the correct Supabase user.
 3. Keep Google enabled if you want to retain the existing Google sign-in button.
 4. In **Project Settings → API Keys**, copy the `service_role` key for local/server use only. Never use a `NEXT_PUBLIC_` prefix for this key.
@@ -36,15 +36,19 @@ FIREBASE_APP_ID=1:572507365191:web:9b62591debea7c1434f662
 FIREBASE_MEASUREMENT_ID=G-2WK3H79FQR
 ```
 
-Also set these Supabase values (without a `NEXT_PUBLIC_` prefix), plus:
+Also set these Supabase values:
 
 ```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-publishable-or-anon-key
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your-supabase-publishable-or-anon-key
+NEXT_PUBLIC_APP_URL=https://your-production-domain.example
+APP_URL=https://your-production-domain.example
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-Set `FIREBASE_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` in local `.env.local` and Vercel. Mark `SUPABASE_SERVICE_ROLE_KEY` as sensitive/secret. The Supabase URL and publishable/anon key are public values that Next.js embeds in the browser bundle through `next.config.ts`; never put the service-role key there. The other Firebase web app values above are informational and are not currently read by the verification flow; `FIREBASE_API_KEY` is the only Firebase variable required by the code.
+Set these values in local `.env.local` and Vercel. Mark `SUPABASE_SERVICE_ROLE_KEY` and `FIREBASE_API_KEY` as sensitive server-side configuration. The Supabase URL and publishable/anon key are public values by design; only the `NEXT_PUBLIC_` versions are used by the browser. Never place a service-role key under `NEXT_PUBLIC_` or in `next.config.ts`'s `env` option. Firebase API keys are not authorization secrets, but restrict them in Google Cloud to the Firebase Identity Toolkit API and authorized app domains. If a real service-role key was ever committed or exposed, rotate it in Supabase before relying on this deployment.
 
 ## 5. Configure Vercel and test the flow
 
@@ -56,4 +60,4 @@ Set `FIREBASE_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVI
 
 Account plans, expenses, preferences, and savings remain stored in Supabase and scoped by the existing RLS policies.
 
-The app supports one active plan per account; ending a plan saves its remaining balance as savings, separate from later plans. Guest plans stay on the current device and move to a new account after sign-in when the account has no active plan or saved plan history. The local copy is removed only after a successful import. JSON backup export/import remains available in Settings.
+The app supports one active plan per account; ending a plan saves its remaining balance as savings, separate from later plans. Guest plans stay on the current device and move to a new account after sign-in when the account has no active plan or saved plan history. The local copy is removed only after a successful import. CSV export remains available in Settings.
